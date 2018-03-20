@@ -1,0 +1,12 @@
+actors:
+  meb:
+    temps:
+      stsId: [9000,9001,9002,9004,9005,9006,9007]
+    power:
+      stsId: [9008,9009,9010,9011]
+
+  charis:
+    temps:
+      stsId: [1091]
+      keyField: [0]
+
