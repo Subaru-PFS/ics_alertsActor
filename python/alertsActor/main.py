@@ -1,23 +1,33 @@
 #!/usr/bin/env python3
 
-import actorcore.Actor
+import runpy
 
-class OurActor(actorcore.Actor.Actor):
+from actorcore import ICC
+
+from . import alerts
+
+class OurActor(ICC.ICC):
     def __init__(self, name,
                  productName=None, configFile=None,
-                 modelNames=(),
+                 modelNames=('hub','charis'),
                  debugLevel=30):
 
         """ Setup an Actor instance. See help for actorcore.Actor for details. """
-        
+
         # This sets up the connections to/from the hub, the logger, and the twisted reactor.
         #
-        actorcore.Actor.Actor.__init__(self, name, 
-                                       productName=productName, 
+        actorcore.Actor.Actor.__init__(self, name,
+                                       productName=productName,
                                        configFile=configFile,
                                        modelNames=modelNames)
 
-        # At this
+        self.activeActors = dict()
+
+def addKeywordCallback(model, key, function, errorCmd):
+    #
+    # Register our new callback
+    #
+    model.keyVarDict[key].addCallback(function, callNow=False)
 
 #
 # To work
