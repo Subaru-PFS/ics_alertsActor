@@ -4,7 +4,7 @@ import runpy
 
 from actorcore import ICC
 
-from . import alerts
+# from . import alerts
 
 class OurActor(ICC.ICC):
     def __init__(self, name,
@@ -16,10 +16,10 @@ class OurActor(ICC.ICC):
 
         # This sets up the connections to/from the hub, the logger, and the twisted reactor.
         #
-        actorcore.Actor.Actor.__init__(self, name,
-                                       productName=productName,
-                                       configFile=configFile,
-                                       modelNames=modelNames)
+        ICC.ICC.__init__(self, name,
+                         productName=productName,
+                         configFile=configFile,
+                         modelNames=modelNames)
 
         self.activeActors = dict()
 

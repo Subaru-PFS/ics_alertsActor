@@ -1,4 +1,7 @@
-from .actorRules import ActorRules
+from importlib import reload
 
-class CharisRules(ActorRules):
+import alertsActor.Controllers.actorRules as actorRules
+reload(actorRules)
+
+class charis(actorRules.ActorRules):
     pass
