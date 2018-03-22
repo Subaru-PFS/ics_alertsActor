@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 
+from collections import OrderedDict
+
 import runpy
-
 from actorcore import ICC
-
-# from . import alerts
 
 class OurActor(ICC.ICC):
     def __init__(self, name,
                  productName=None, configFile=None,
                  modelNames=('hub','charis'),
-                 debugLevel=30):
+                 debugLevel=10):
 
         """ Setup an Actor instance. See help for actorcore.Actor for details. """
 
@@ -21,7 +20,25 @@ class OurActor(ICC.ICC):
                          configFile=configFile,
                          modelNames=modelNames)
 
-        self.activeActors = dict()
+        self.activeAlerts = OrderedDict()
+
+    def _getAlertKey(self, actor, keyword, field=None):
+        return (actor, keyword, field)
+
+    def getAlertState(self, actor, keyword, field=None):
+        return self.activeAlerts.get(self._getAlertKey(actor, keyword, field), "OK")
+        
+    def setAlertState(self, actor, keyword, newState, field=None):
+        if newState == None:
+            self.clearAlert(actor, keyword, field=field)
+        else:
+            self.activeAlerts[self._getAlertKey(actor, keyword, field)] = newState
+        
+    def clearAlert(self, actor, keyword, field=None):
+        try:
+            del self.activeAlerts[self._getAlertKey(actor, keyword, field)]
+        except KeyError:
+            pass
 
 def addKeywordCallback(model, key, function, errorCmd):
     #
