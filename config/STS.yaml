@@ -1,12 +1,43 @@
 actors:
   meb:
-    temps:
-      stsId: [9000,9001,9002,9004,9005,9006,9007]
+    temps: [[0, 1096],        # Get rid of the CHARIS hack below before using.
+            [1, 1097],
+            [2, 1098],
+            [3, 1099],
+            [4, 1100],
+            [5, 1101],
+            [6, 1102]]
     power:
-      stsId: [9008,9009,9010,9011]
+      [[0, 1103],
+       [1, 1104],
+       [2, 1105],
+       [3, 1106]]
+    flow: [[0, 1107]]
+  mcs:
+    ccdTemp: [[0, 1108]]
 
   charis:
     temps:
-      stsId: [1091]
-      keyField: [0]
-
+      [[0, 1096],
+       [1, 1097],
+       [2, 1098],
+       [3, 1099],
+       [4, 1100],
+       [5, 1101],
+       [6, 1102]]
+    ionpump1:
+      [[4, 1095]]
+      
+# 1096, "FLOAT+TEXT", "PFS: MCS MEB Temp 1"
+# 1097, "FLOAT+TEXT", "PFS: MCS MEB Temp 2"
+# 1098, "FLOAT+TEXT", "PFS: MCS MEB Temp 3"
+# 1099, "FLOAT+TEXT", "PFS: MCS MEB Temp 4"
+# 1100, "FLOAT+TEXT", "PFS: MCS MEB Temp 5"
+# 1101, "FLOAT+TEXT", "PFS: MCS MEB Temp 6"
+# 1102, "FLOAT+TEXT", "PFS: MCS MEB Temp 7"
+# 1103, "INTEGER+TEXT", "PFS: MCS MEB Power 1"
+# 1104, "INTEGER+TEXT", "PFS: MCS MEB Power 2"
+# 1105, "INTEGER+TEXT", "PFS: MCS MEB Power 3"
+# 1106, "INTEGER+TEXT", "PFS: MCS MEB Power 4"
+# 1107, "FLOAT+TEXT", "PFS: MCS MEB Flow"
+# 1108, "FLOAT+TEXT", "PFS: MCS MCS CCD Temp"
