@@ -1,0 +1,74 @@
+# Template for all keyword alerts:
+#    alertType: a name, to help any consumers
+#    call: True, False, or an object, method pair, where we find the named object
+#          and call the corresponding method.
+#          If True, call a generic callback for this alertType
+#    alertFmt: if non-null, an f-string evaluated inside the call method. It is expected
+#              to have the alertCall() argument variables available to it, plus "value".
+#              This may be the biggest security hole ever put into a program.
+#
+# The call method is called with:
+#    alertCall(fullReply, actorName, keyName, keyIndex)
+#
+# Note that the base template "alert" is actually a trigger: it is always called
+# when a new keyword value is received.
+#
+_alert: &ALERT
+  alertType: trigger
+  call: True
+  alertFmt: null
+  
+# Template for an alert with simple limits:
+#   limits: a numeric pair of non-inclusive limits, with NaN for
+#           unused limits. I.e. trigger if (min <= val or val >=  max)
+#
+_limitsAlert: &LIMITS_ALERT
+  <<: *ALERT
+  alertType: limits
+  limits: [null, null]
+
+# Template for regexp match alerts:
+#   re: a regular expression
+#   invert: bool, whether or not to invert the match sense
+#
+_regexpAlert: &REGEXP_ALERT
+  <<: *ALERT
+  alertType: regexp
+  pattern: null
+  invert: False
+
+################################################################
+#
+# Actual alerts below
+#
+
+# We group all keyword alerts by actor
+#
+actors:
+  charis:                       # Just for pre-commissioning testing
+    temps[0]:
+      <<: *LIMITS_ALERT
+      limits: [null, 40.9]
+    temps:
+      <<: *ALERT
+      call: charis.checkTempRange
+    motor6status[6]:
+      <<: *REGEXP_ALERT
+      pattern: 'limit switch error'
+      
+  meb:                          # MCS E-Box
+    flow:
+      <<: *LIMITS_ALERT
+      limits: [0.0, null]
+      alertFmt: 'coolant flow has stopped'
+      
+  xcu_{cam}:                    # All XCUs
+    pcmPower[bus1]:
+      <<: *LIMITS_ALERT
+      limits: [23.5, null]
+      alertFmt: 'Input power is failing!!: {value}V'
+    pcmPower[bus2]:
+      <<: *LIMITS_ALERT
+      limits: [23.5, null]
+      alertFmt: 'Input power is failing!!: {value}V'
+    
