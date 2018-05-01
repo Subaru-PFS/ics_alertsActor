@@ -5,7 +5,7 @@ import functools
 import yaml
 
 import logging
-from STSpy import radio, datum
+from STSpy.STSpy import radio, datum
 
 class STSCallback(object):
     def __init__(self, actorName, stsMap, actor, logger):
@@ -55,9 +55,9 @@ class ActorRules(object):
 
         self.connect()
 
-    def start(self):
+    def start(self, cmd):
         pass
-    def stop(self):
+    def stop(self, cmd):
         pass
 
     def connect(self):
@@ -65,7 +65,7 @@ class ActorRules(object):
         pass
 
     def connectSts(self):
-        """ Check for keywords or firld to forward to STS. """
+        """ Check for keywords or field to forward to STS. """
         with open(os.path.expandvars('$ICS_ALERTSACTOR_DIR/config/STS.yaml'), 'r') as cfgFile:
             cfg = yaml.load(cfgFile)
 
