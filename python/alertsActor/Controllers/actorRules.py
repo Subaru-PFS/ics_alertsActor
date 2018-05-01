@@ -62,7 +62,6 @@ class ActorRules(object):
 
     def connect(self):
         self.connectSts()
-        pass
 
     def connectSts(self):
         """ Check for keywords or field to forward to STS. """
