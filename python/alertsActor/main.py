@@ -8,7 +8,7 @@ from actorcore import ICC
 class OurActor(ICC.ICC):
     def __init__(self, name,
                  productName=None, configFile=None,
-                 modelNames=('hub','charis'),
+                 modelNames=('hub','meb','mcs'),
                  debugLevel=10):
 
         """ Setup an Actor instance. See help for actorcore.Actor for details. """

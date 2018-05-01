@@ -13,21 +13,9 @@ actors:
        [2, 1105],
        [3, 1106]]
     flow: [[0, 1107]]
-  mcs:
-    ccdTemp: [[0, 1108]]
+#  mcs:
+#    ccdTemp: [[0, 1108]]
 
-  charis:
-    temps:
-      [[0, 1096],
-       [1, 1097],
-       [2, 1098],
-       [3, 1099],
-       [4, 1100],
-       [5, 1101],
-       [6, 1102]]
-    ionpump1:
-      [[4, 1095]]
-      
 # 1096, "FLOAT+TEXT", "PFS: MCS MEB Temp 1"
 # 1097, "FLOAT+TEXT", "PFS: MCS MEB Temp 2"
 # 1098, "FLOAT+TEXT", "PFS: MCS MEB Temp 3"
