@@ -2,7 +2,6 @@
 
 from collections import OrderedDict
 
-import runpy
 from actorcore import ICC
 
 class OurActor(ICC.ICC):
@@ -27,13 +26,13 @@ class OurActor(ICC.ICC):
 
     def getAlertState(self, actor, keyword, field=None):
         return self.activeAlerts.get(self._getAlertKey(actor, keyword, field), "OK")
-        
+
     def setAlertState(self, actor, keyword, newState, field=None):
-        if newState == None:
+        if newState is None:
             self.clearAlert(actor, keyword, field=field)
         else:
             self.activeAlerts[self._getAlertKey(actor, keyword, field)] = newState
-        
+
     def clearAlert(self, actor, keyword, field=None):
         try:
             del self.activeAlerts[self._getAlertKey(actor, keyword, field)]

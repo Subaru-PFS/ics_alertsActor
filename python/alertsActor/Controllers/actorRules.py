@@ -25,10 +25,10 @@ class STSCallback(object):
             return datum.Datum.Text, str(key)
         else:
             raise TypeError('do not know how to convert a %s' % (key))
-        
+
     def __call__(self, key):
         """ This function is called when new keys are received by the dispatcher. """
-        
+
         toSend = []
         now = int(time.time())
         for f_i, f in enumerate(self.stsMap):
@@ -46,7 +46,7 @@ class STSCallback(object):
         self.logger.info('flushing STS, with: %s', toSend)
         stsServer = radio.Radio()
         stsServer.transmit(toSend)
-        
+
 class ActorRules(object):
     def __init__(self, actor, name):
         self.name = name
