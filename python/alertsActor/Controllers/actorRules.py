@@ -51,13 +51,13 @@ class ActorRules(object):
     def __init__(self, actor, name):
         self.name = name
         self.actor = actor
-        self.logger = logging.getLogger(f'alerts_{name}')
+        self.logger = logging.getLogger('alerts')
 
         self.connect()
 
-    def start(self, cmd):
+    def start(self, cmd=None):
         pass
-    def stop(self, cmd):
+    def stop(self, cmd=None):
         pass
 
     def connect(self):
@@ -73,13 +73,14 @@ class ActorRules(object):
             try:
                 model = self.actor.models[self.name].keyVarDict
             except KeyError:
-                raise KeyError(f'actor model for {self.name} is not loaded')
+                raise KeyError('actor model for %s is not loaded' % (self.name))
 
             for keyName in cfgActors[self.name]:
                 try:
                     keyVar = model[keyName]
                 except KeyError:
-                    raise KeyError(f'keyvar {keyName} is not in the {self.name} model')
+                    raise KeyError('keyvar %s is not in the %s model' % (keyName,
+                                                                         self.name))
 
                 keyConfig = cfgActors[self.name][keyName]
 

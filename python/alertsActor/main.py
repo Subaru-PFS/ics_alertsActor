@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 
+#from __future__ import unicode_literals
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+#from future import standard_library
+#standard_library.install_aliases()
 from collections import OrderedDict
 
 import runpy
@@ -8,7 +14,7 @@ from actorcore import ICC
 class OurActor(ICC.ICC):
     def __init__(self, name,
                  productName=None, configFile=None,
-                 modelNames=('hub','meb','mcs'),
+                 modelNames=('charis',),
                  debugLevel=10):
 
         """ Setup an Actor instance. See help for actorcore.Actor for details. """
