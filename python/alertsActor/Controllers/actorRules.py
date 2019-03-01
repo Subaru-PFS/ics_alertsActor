@@ -2,9 +2,13 @@ import os
 import time
 import functools
 
+import numpy as np
 import yaml
 
 import logging
+
+import opscore.protocols.types
+
 from STSpy.STSpy import radio, datum
 
 class STSCallback(object):
@@ -17,13 +21,22 @@ class STSCallback(object):
     def keyToStsTypeAndValue(self, key):
         """ Return the STS type for theActor given key. """
 
+        def doFloat(key):
+            try:
+                return float(key)
+            except:
+                return np.nan
+            
         if isinstance(key, float):
-            return datum.Datum.FloatWithText, float(key)
+            return datum.Datum.Float, doFloat(key)
         elif isinstance(key, int):
-            return datum.Datum.IntegerWithText, int(key)
+            return datum.Datum.Integer, int(key)
         elif isinstance(key, str):
             return datum.Datum.Text, str(key)
+        elif isinstance(key, opscore.protocols.types.Invalid):
+            return datum.Datum.Float, np.nan 
         else:
+
             raise TypeError('do not know how to convert a %s' % (key))
         
     def __call__(self, key):
@@ -41,7 +54,7 @@ class STSCallback(object):
                               stsId, stsType,
                               key.actor, key.name, keyFieldId,
                               val, alertState)
-            toSend.append(stsType(stsId, timestamp=now, value=(val, alertState)))
+            toSend.append(stsType(stsId, timestamp=now, value=val))
 
         self.logger.info('flushing STS, with: %s', toSend)
         stsServer = radio.Radio()
