@@ -4,10 +4,11 @@ from collections import OrderedDict
 
 from actorcore import ICC
 
+
 class OurActor(ICC.ICC):
     def __init__(self, name,
                  productName=None, configFile=None,
-                 modelNames=('hub','meb','mcs'),
+                 modelNames=('hub', 'dcb'),
                  debugLevel=10):
 
         """ Setup an Actor instance. See help for actorcore.Actor for details. """
@@ -22,10 +23,11 @@ class OurActor(ICC.ICC):
         self.activeAlerts = OrderedDict()
 
     def _getAlertKey(self, actor, keyword, field=None):
-        return (actor, keyword, field)
+        return (actor, keyword.name, field)
 
     def getAlertState(self, actor, keyword, field=None):
-        return self.activeAlerts.get(self._getAlertKey(actor, keyword, field), "OK")
+        alert = self.activeAlerts.get(self._getAlertKey(actor, keyword, field), None)
+        return "OK" if alert is None else alert.call(keyword)
 
     def setAlertState(self, actor, keyword, newState, field=None):
         if newState is None:
@@ -39,17 +41,20 @@ class OurActor(ICC.ICC):
         except KeyError:
             pass
 
+
 def addKeywordCallback(model, key, function, errorCmd):
     #
     # Register our new callback
     #
     model.keyVarDict[key].addCallback(function, callNow=False)
 
+
 #
 # To work
 def main():
     theActor = OurActor('alerts', productName='alertsActor')
     theActor.run()
+
 
 if __name__ == '__main__':
     main()

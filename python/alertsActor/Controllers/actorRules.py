@@ -1,11 +1,69 @@
+import importlib
+import logging
 import os
 import time
-import functools
+from functools import partial
 
+import numpy as np
 import yaml
-
-import logging
 from STSpy.STSpy import radio, datum
+
+
+class Alert(object):
+    def __init__(self, call, alertFmt, ind=0, **kwargs):
+        if call != True:
+            modname, funcname = call.split('.')
+            module = importlib.import_module(modname)
+            self.call = partial(getattr(module, funcname), self)
+        else:
+            self.call = self.check
+
+        self.alertFmt = alertFmt
+        self.ind = ind
+
+    def check(self, keyword):
+        return "OK"
+
+
+class LimitsAlert(Alert):
+    def __init__(self, call, alertFmt, limits, ind=0):
+        Alert.__init__(self, call=call, alertFmt=alertFmt, ind=ind)
+        self.lowBound = limits[0] if limits[0] is not None else -np.inf
+        self.upBound = limits[1] if limits[1] is not None else np.inf
+
+    def check(self, keyword):
+        value = keyword.getValue()[self.ind]
+        if not self.lowBound < value < self.upBound:
+            alertState = self.alertFmt.format(**dict(value=value))
+        else:
+            alertState = "OK"
+
+        return alertState
+
+
+class RegexpAlert(Alert):
+    def __init__(self, call, alertFmt, pattern, invert, ind=0):
+        Alert.__init__(self, call=call, alertFmt=alertFmt, ind=ind)
+        self.pattern = pattern
+        self.invert = invert
+
+
+def AlertObj(alertType, **kwargs):
+    if alertType == 'trigger':
+        return Alert(**kwargs)
+    elif alertType == 'limits':
+        return LimitsAlert(**kwargs)
+    elif alertType == 'regexp':
+        return RegexpAlert(**kwargs)
+    else:
+        raise KeyError('unknown alertType')
+
+
+def getFields(keyName):
+    if keyName[-1] == ']':
+        return keyName[:-3], [int(keyName[-2])]
+    return keyName, None
+
 
 class STSCallback(object):
     def __init__(self, actorName, stsMap, actor, logger):
@@ -31,11 +89,11 @@ class STSCallback(object):
 
         toSend = []
         now = int(time.time())
+
         for f_i, f in enumerate(self.stsMap):
             keyFieldId, stsId = f
             val = key[keyFieldId]
-
-            alertState = self.actor.getAlertState(key, keyFieldId)
+            alertState = self.actor.getAlertState(self.actorName, key, keyFieldId)
             stsType, val = self.keyToStsTypeAndValue(key[keyFieldId])
             self.logger.debug('updating STSid %d(%s) from %s.%s[%s] with (%s, %s)',
                               stsId, stsType,
@@ -47,6 +105,7 @@ class STSCallback(object):
         stsServer = radio.Radio()
         stsServer.transmit(toSend)
 
+
 class ActorRules(object):
     def __init__(self, actor, name):
         self.name = name
@@ -57,11 +116,37 @@ class ActorRules(object):
 
     def start(self, cmd):
         pass
+
     def stop(self, cmd):
         pass
 
     def connect(self):
+        self.setAlerts()
         self.connectSts()
+
+    def setAlerts(self):
+        with open(os.path.expandvars('$ICS_ALERTSACTOR_DIR/config/keywordAlerts.yaml'), 'r') as cfgFile:
+            cfg = yaml.load(cfgFile)
+
+        cfgActors = cfg['actors']
+        try:
+            model = self.actor.models[self.name].keyVarDict
+        except KeyError:
+            raise KeyError(f'actor model for {self.name} is not loaded')
+
+        for keyName in cfgActors[self.name]:
+            keyConfig = cfgActors[self.name][keyName]
+            keyName, fields = getFields(keyName)
+            try:
+                keyVar = model[keyName]
+            except KeyError:
+                raise KeyError(f'keyvar {keyName} is not in the {self.name} model')
+
+            fields = [i for i in range(len(keyVar))] if fields is None else fields
+
+            for field in fields:
+                alert = AlertObj(ind=field, **keyConfig)
+                self.actor.setAlertState(actor=self.name, keyword=keyVar, newState=alert, field=field)
 
     def connectSts(self):
         """ Check for keywords or field to forward to STS. """
