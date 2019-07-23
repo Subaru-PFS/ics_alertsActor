@@ -17,7 +17,6 @@ _alert: &ALERT
   alertType: trigger
   call: True
   alertFmt: null
-  
 # Template for an alert with simple limits:
 #   limits: a numeric pair of non-inclusive limits, with NaN for
 #           unused limits. I.e. trigger if (min <= val or val >=  max)
@@ -55,7 +54,7 @@ actors:
     motor6status[6]:
       <<: *REGEXP_ALERT
       pattern: 'limit switch error'
-      
+
   meb:                          # MCS E-Box
     flow:
       <<: *LIMITS_ALERT
@@ -65,7 +64,7 @@ actors:
       <<: *LIMITS_ALERT
       limits: [10.0, 25.0]
       alertFmt: 'temperature out of range'
-      
+
   xcu_{cam}:                    # All XCUs
     pcmPower[bus1]:
       <<: *LIMITS_ALERT
@@ -75,4 +74,16 @@ actors:
       <<: *LIMITS_ALERT
       limits: [23.5, null]
       alertFmt: 'Input power is failing!!: {value}V'
-    
+
+  dcb:
+    atenVAW:
+      <<: *ALERT
+      call: dcb.checkTempRange
+    atenVAW[0]:
+      <<: *LIMITS_ALERT
+      limits: [100, 120]
+      alertFmt: 'Input voltage is failing!!: {value}V'
+    atenVAW[1]:
+      <<: *LIMITS_ALERT
+      limits: [1, 3]
+      alertFmt: 'Input Current is failing!!: {value}A'
