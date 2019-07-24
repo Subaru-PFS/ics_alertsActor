@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import argparse
+import logging
 from collections import OrderedDict
 
 from actorcore import ICC
@@ -9,7 +11,7 @@ class OurActor(ICC.ICC):
     def __init__(self, name,
                  productName=None, configFile=None,
                  modelNames=('hub', 'dcb'),
-                 debugLevel=10):
+                 logLevel=logging.DEBUG):
 
         """ Setup an Actor instance. See help for actorcore.Actor for details. """
 
@@ -19,6 +21,8 @@ class OurActor(ICC.ICC):
                          productName=productName,
                          configFile=configFile,
                          modelNames=modelNames)
+
+        self.logger.setLevel(logLevel)
 
         self.activeAlerts = OrderedDict()
 
@@ -51,8 +55,21 @@ def addKeywordCallback(model, key, function, errorCmd):
 
 #
 # To work
+
 def main():
-    theActor = OurActor('alerts', productName='alertsActor')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config', default=None, type=str, nargs='?',
+                        help='configuration file to use')
+    parser.add_argument('--logLevel', default=logging.DEBUG, type=int, nargs='?',
+                        help='logging level')
+    parser.add_argument('--name', default='alerts', type=str, nargs='?',
+                        help='identity')
+    args = parser.parse_args()
+
+    theActor = OurActor(args.name,
+                        productName='alertsActor',
+                        configFile=args.config,
+                        logLevel=args.logLevel)
     theActor.run()
 
 
