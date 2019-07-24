@@ -111,31 +111,41 @@ class ActorRules(object):
         self.name = name
         self.actor = actor
         self.logger = logging.getLogger(f'alerts_{name}')
-
-        self.connect()
+        self.cbs = []
 
     def start(self, cmd):
-        pass
-
-    def stop(self, cmd):
-        pass
-
-    def connect(self):
         self.setAlerts()
         self.connectSts()
 
-    def setAlerts(self):
-        with open(os.path.expandvars('$ICS_ALERTSACTOR_DIR/config/keywordAlerts.yaml'), 'r') as cfgFile:
+    def stop(self, cmd):
+        for keyVar, cb in self.cbs:
+            self.logger.warn('removing callback: %s', cb)
+            keyVar.removeCallback(cb)
+            for field in range(len(keyVar)):
+                self.actor.clearAlert(self.name, keyVar, field=field)
+
+    def getConfig(self, file):
+        """ Load model and config """
+        with open(os.path.expandvars(f'$ICS_ALERTSACTOR_DIR/config/{file}'), 'r') as cfgFile:
             cfg = yaml.load(cfgFile)
 
         cfgActors = cfg['actors']
+        if self.name not in cfgActors:
+            raise KeyError(f'STS not configured for {self.name} ')
+
         try:
             model = self.actor.models[self.name].keyVarDict
         except KeyError:
             raise KeyError(f'actor model for {self.name} is not loaded')
 
-        for keyName in cfgActors[self.name]:
-            keyConfig = cfgActors[self.name][keyName]
+        return model, cfgActors[self.name]
+
+    def setAlerts(self):
+        """ Create and set Alerts state """
+        model, cfg = self.getConfig('keywordAlerts.yaml')
+
+        for keyName in cfg:
+            keyConfig = cfg[keyName]
             keyName, fields = getFields(keyName)
             try:
                 keyVar = model[keyName]
@@ -150,29 +160,18 @@ class ActorRules(object):
 
     def connectSts(self):
         """ Check for keywords or field to forward to STS. """
-        with open(os.path.expandvars('$ICS_ALERTSACTOR_DIR/config/STS.yaml'), 'r') as cfgFile:
-            cfg = yaml.load(cfgFile)
 
-        cfgActors = cfg['actors']
-        if self.name in cfgActors:
+        model, cfg = self.getConfig('STS.yaml')
+
+        for keyName in cfg:
+            keyConfig = cfg[keyName]
             try:
-                model = self.actor.models[self.name].keyVarDict
+                keyVar = model[keyName]
             except KeyError:
-                raise KeyError(f'actor model for {self.name} is not loaded')
+                raise KeyError(f'keyvar {keyName} is not in the {self.name} model')
 
-            for keyName in cfgActors[self.name]:
-                try:
-                    keyVar = model[keyName]
-                except KeyError:
-                    raise KeyError(f'keyvar {keyName} is not in the {self.name} model')
+            cb = STSCallback(self.name, keyConfig, self.actor, self.logger)
+            self.logger.warn('wiring in %s.%s to %s', self.name, keyName, keyConfig)
 
-                keyConfig = cfgActors[self.name][keyName]
-
-                self.logger.warn('wiring in %s.%s to %s', self.name, keyName, keyConfig)
-
-                for cb in keyVar._callbacks:
-                    if cb.__class__.__name__ == STSCallback.__name__:
-                        self.logger.warn('removing callback: %s', cb)
-                        keyVar.removeCallback(cb)
-                keyVar.addCallback(STSCallback(self.name, keyConfig, self.actor, self.logger),
-                                   callNow=False)
+            keyVar.addCallback(cb, callNow=False)
+            self.cbs.append((keyVar, cb))
