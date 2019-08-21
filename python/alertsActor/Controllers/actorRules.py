@@ -1,6 +1,7 @@
 import importlib
 import logging
 import os
+import re
 import time
 from functools import partial
 
@@ -60,9 +61,12 @@ def AlertObj(alertType, **kwargs):
 
 
 def getFields(keyName):
-    if keyName[-1] == ']':
-        return keyName[:-3], [int(keyName[-2])]
-    return keyName, None
+    m = re.search("\[([0-9_]+)\]", keyName)
+
+    if m is not None:
+        keyName, m = keyName[:m.span(0)[0]].strip(), [int(m.group(1))]
+
+    return keyName, m
 
 
 class STSCallback(object):
