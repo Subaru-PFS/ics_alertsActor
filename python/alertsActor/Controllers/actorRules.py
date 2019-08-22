@@ -64,7 +64,9 @@ def getFields(keyName):
     m = re.search("\[([0-9_]+)\]", keyName)
 
     if m is not None:
-        keyName, m = keyName[:m.span(0)[0]].strip(), [int(m.group(1))]
+        fieldStart = m.span(0)[0]
+        fieldNumber = int(m.group(1))
+        return keyName[:fieldStart].strip(), [fieldNumber]
 
     return keyName, m
 
