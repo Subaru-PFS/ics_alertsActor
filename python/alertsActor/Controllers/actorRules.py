@@ -1,11 +1,73 @@
-import os
-import time
-import functools
-
-import yaml
-
+import importlib
 import logging
+import os
+import re
+import time
+from functools import partial
+
+import numpy as np
+import yaml
 from STSpy.STSpy import radio, datum
+
+
+class Alert(object):
+    def __init__(self, call, alertFmt, ind=0, **kwargs):
+        if call != True:
+            modname, funcname = call.split('.')
+            module = importlib.import_module(modname)
+            self.call = partial(getattr(module, funcname), self)
+        else:
+            self.call = self.check
+
+        self.alertFmt = alertFmt
+        self.ind = ind
+
+    def check(self, keyword):
+        return "OK"
+
+
+class LimitsAlert(Alert):
+    def __init__(self, call, alertFmt, limits, ind=0):
+        Alert.__init__(self, call=call, alertFmt=alertFmt, ind=ind)
+        self.lowBound = limits[0] if limits[0] is not None else -np.inf
+        self.upBound = limits[1] if limits[1] is not None else np.inf
+
+    def check(self, keyword):
+        value = keyword.getValue()[self.ind]
+        if not self.lowBound < value < self.upBound:
+            alertState = self.alertFmt.format(**dict(value=value))
+        else:
+            alertState = "OK"
+
+        return alertState
+
+
+class RegexpAlert(Alert):
+    def __init__(self, call, alertFmt, pattern, invert, ind=0):
+        Alert.__init__(self, call=call, alertFmt=alertFmt, ind=ind)
+        self.pattern = pattern
+        self.invert = invert
+
+
+def AlertObj(alertType, **kwargs):
+    if alertType == 'trigger':
+        return Alert(**kwargs)
+    elif alertType == 'limits':
+        return LimitsAlert(**kwargs)
+    elif alertType == 'regexp':
+        return RegexpAlert(**kwargs)
+    else:
+        raise KeyError('unknown alertType')
+
+
+def getFields(keyName):
+    m = re.search("\[([0-9_]+)\]", keyName)
+
+    if m is not None:
+        keyName, m = keyName[:m.span(0)[0]].strip(), [int(m.group(1))]
+
+    return keyName, m
+
 
 class STSCallback(object):
     def __init__(self, actorName, stsMap, actor, logger):
@@ -31,11 +93,11 @@ class STSCallback(object):
 
         toSend = []
         now = int(time.time())
+
         for f_i, f in enumerate(self.stsMap):
             keyFieldId, stsId = f
             val = key[keyFieldId]
-
-            alertState = self.actor.getAlertState(key, keyFieldId)
+            alertState = self.actor.getAlertState(self.actorName, key, keyFieldId)
             stsType, val = self.keyToStsTypeAndValue(key[keyFieldId])
             self.logger.debug('updating STSid %d(%s) from %s.%s[%s] with (%s, %s)',
                               stsId, stsType,
@@ -47,47 +109,73 @@ class STSCallback(object):
         stsServer = radio.Radio()
         stsServer.transmit(toSend)
 
+
 class ActorRules(object):
     def __init__(self, actor, name):
         self.name = name
         self.actor = actor
         self.logger = logging.getLogger(f'alerts_{name}')
-
-        self.connect()
+        self.cbs = []
 
     def start(self, cmd):
-        pass
-    def stop(self, cmd):
-        pass
-
-    def connect(self):
+        self.setAlerts()
         self.connectSts()
 
-    def connectSts(self):
-        """ Check for keywords or field to forward to STS. """
-        with open(os.path.expandvars('$ICS_ALERTSACTOR_DIR/config/STS.yaml'), 'r') as cfgFile:
+    def stop(self, cmd):
+        for keyVar, cb in self.cbs:
+            self.logger.warn('removing callback: %s', cb)
+            keyVar.removeCallback(cb)
+            for field in range(len(keyVar)):
+                self.actor.clearAlert(self.name, keyVar, field=field)
+
+    def getConfig(self, file):
+        """ Load model and config """
+        with open(os.path.expandvars(f'$ICS_ALERTSACTOR_DIR/config/{file}'), 'r') as cfgFile:
             cfg = yaml.load(cfgFile)
 
         cfgActors = cfg['actors']
-        if self.name in cfgActors:
+        if self.name not in cfgActors:
+            raise KeyError(f'STS not configured for {self.name} ')
+
+        try:
+            model = self.actor.models[self.name].keyVarDict
+        except KeyError:
+            raise KeyError(f'actor model for {self.name} is not loaded')
+
+        return model, cfgActors[self.name]
+
+    def setAlerts(self):
+        """ Create and set Alerts state """
+        model, cfg = self.getConfig('keywordAlerts.yaml')
+
+        for keyName in cfg:
+            keyConfig = cfg[keyName]
+            keyName, fields = getFields(keyName)
             try:
-                model = self.actor.models[self.name].keyVarDict
+                keyVar = model[keyName]
             except KeyError:
-                raise KeyError(f'actor model for {self.name} is not loaded')
+                raise KeyError(f'keyvar {keyName} is not in the {self.name} model')
 
-            for keyName in cfgActors[self.name]:
-                try:
-                    keyVar = model[keyName]
-                except KeyError:
-                    raise KeyError(f'keyvar {keyName} is not in the {self.name} model')
+            fields = [i for i in range(len(keyVar))] if fields is None else fields
 
-                keyConfig = cfgActors[self.name][keyName]
+            for field in fields:
+                alert = AlertObj(ind=field, **keyConfig)
+                self.actor.setAlertState(actor=self.name, keyword=keyVar, newState=alert, field=field)
 
-                self.logger.warn('wiring in %s.%s to %s', self.name, keyName, keyConfig)
+    def connectSts(self):
+        """ Check for keywords or field to forward to STS. """
 
-                for cb in keyVar._callbacks:
-                    if cb.__class__.__name__ == STSCallback.__name__:
-                        self.logger.warn('removing callback: %s', cb)
-                        keyVar.removeCallback(cb)
-                keyVar.addCallback(STSCallback(self.name, keyConfig, self.actor, self.logger),
-                                   callNow=False)
+        model, cfg = self.getConfig('STS.yaml')
+
+        for keyName in cfg:
+            keyConfig = cfg[keyName]
+            try:
+                keyVar = model[keyName]
+            except KeyError:
+                raise KeyError(f'keyvar {keyName} is not in the {self.name} model')
+
+            cb = STSCallback(self.name, keyConfig, self.actor, self.logger)
+            self.logger.warn('wiring in %s.%s to %s', self.name, keyName, keyConfig)
+
+            keyVar.addCallback(cb, callNow=False)
+            self.cbs.append((keyVar, cb))
