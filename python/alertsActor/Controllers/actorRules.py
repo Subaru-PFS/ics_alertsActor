@@ -33,7 +33,9 @@ class LimitsAlert(Alert):
         self.upBound = float(limits[1]) if limits[1] is not None else np.inf
 
     def check(self, keyword):
-        value = keyword.getValue()[self.ind]
+        values = keyword.getValue()
+        value = values[self.ind] if isinstance(values, tuple) else values
+
         if not self.lowBound < value < self.upBound:
             alertState = self.alertFmt.format(**dict(value=value))
         else:
