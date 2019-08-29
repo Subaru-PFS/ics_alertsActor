@@ -118,6 +118,9 @@ class ActorRules(object):
         self.cbs = []
 
     def start(self, cmd):
+        if self.name not in self.actor.models:
+            self.actor.addModels([self.name])
+
         self.setAlerts()
         self.connectSts()
 
