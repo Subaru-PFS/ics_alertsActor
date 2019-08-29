@@ -4,7 +4,6 @@ import os
 import re
 import time
 from functools import partial
-
 import numpy as np
 import yaml
 from STSpy.STSpy import radio, datum
@@ -98,7 +97,6 @@ class STSCallback(object):
 
         for f_i, f in enumerate(self.stsMap):
             keyFieldId, stsId = f
-            val = key[keyFieldId]
             alertState = self.actor.getAlertState(self.actorName, key, keyFieldId)
             stsType, val = self.keyToStsTypeAndValue(key[keyFieldId])
             self.logger.debug('updating STSid %d(%s) from %s.%s[%s] with (%s, %s)',
@@ -133,25 +131,36 @@ class ActorRules(object):
             for field in range(len(keyVar)):
                 self.actor.clearAlert(self.name, keyVar, field=field)
 
-    def getConfig(self, file):
+    def getConfig(self, file, name=None):
         """ Load model and config """
         with open(os.path.expandvars(f'$ICS_ALERTSACTOR_DIR/config/{file}'), 'r') as cfgFile:
             cfg = yaml.load(cfgFile)
 
         cfgActors = cfg['actors']
-        if self.name not in cfgActors:
-            raise KeyError(f'STS not configured for {self.name} ')
+        name = self.name if name is None else name
+
+        if name not in cfgActors:
+            raise RuntimeError(f'STS not configured for {name} ')
 
         try:
             model = self.actor.models[self.name].keyVarDict
         except KeyError:
             raise KeyError(f'actor model for {self.name} is not loaded')
 
-        return model, cfgActors[self.name]
+        return model, cfgActors[name]
+
+    def getAlertConfig(self, name=None):
+        """ Load keywordAlerts config """
+        try:
+            ret = self.getConfig('keywordAlerts.yaml', name=name)
+        except RuntimeError:
+            ret = None, []
+
+        return ret
 
     def setAlerts(self):
         """ Create and set Alerts state """
-        model, cfg = self.getConfig('keywordAlerts.yaml')
+        model, cfg = self.getAlertConfig()
 
         for keyName in cfg:
             keyConfig = cfg[keyName]
