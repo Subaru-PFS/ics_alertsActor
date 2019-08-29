@@ -29,8 +29,8 @@ class Alert(object):
 class LimitsAlert(Alert):
     def __init__(self, call, alertFmt, limits, ind=0):
         Alert.__init__(self, call=call, alertFmt=alertFmt, ind=ind)
-        self.lowBound = limits[0] if limits[0] is not None else -np.inf
-        self.upBound = limits[1] if limits[1] is not None else np.inf
+        self.lowBound = float(limits[0]) if limits[0] is not None else -np.inf
+        self.upBound = float(limits[1]) if limits[1] is not None else np.inf
 
     def check(self, keyword):
         value = keyword.getValue()[self.ind]
