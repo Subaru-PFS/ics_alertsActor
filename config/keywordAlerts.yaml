@@ -98,3 +98,14 @@ actors:
       <<: *LIMITS_ALERT
       limits: [0, null]
       alertFmt: 'CCD heater should be on !!: {value}'
+    temps:
+      <<: *ALERT
+      call: xcu.checkTempRange
+
+  enu_{smId}:
+    temps1:
+      <<: *ALERT
+      call: enu.checkTempRange
+    temps2:
+      <<: *ALERT
+      call: enu.checkTempRange
