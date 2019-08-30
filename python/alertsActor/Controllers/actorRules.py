@@ -7,7 +7,7 @@ from functools import partial
 import numpy as np
 import yaml
 from STSpy.STSpy import radio, datum
-
+from opscore.protocols import types
 
 class Alert(object):
     def __init__(self, call, alertFmt, ind=0, **kwargs):
@@ -86,6 +86,8 @@ class STSCallback(object):
             return datum.Datum.IntegerWithText, int(key)
         elif isinstance(key, str):
             return datum.Datum.Text, str(key)
+        elif isinstance(key, types.Invalid):
+            return datum.Datum.FloatWithText, np.nan
         else:
             raise TypeError('do not know how to convert a %s' % (key))
 
