@@ -10,7 +10,6 @@ from actorcore import ICC
 class OurActor(ICC.ICC):
     def __init__(self, name,
                  productName=None, configFile=None,
-                 modelNames=('hub', 'dcb'),
                  logLevel=logging.DEBUG):
 
         """ Setup an Actor instance. See help for actorcore.Actor for details. """
@@ -19,11 +18,9 @@ class OurActor(ICC.ICC):
         #
         ICC.ICC.__init__(self, name,
                          productName=productName,
-                         configFile=configFile,
-                         modelNames=modelNames)
+                         configFile=configFile)
 
         self.logger.setLevel(logLevel)
-
         self.activeAlerts = OrderedDict()
 
     def _getAlertKey(self, actor, keyword, field=None):

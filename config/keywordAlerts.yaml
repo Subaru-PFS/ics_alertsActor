@@ -66,24 +66,46 @@ actors:
       alertFmt: 'temperature out of range'
 
   xcu_{cam}:                    # All XCUs
-    pcmPower[bus1]:
+    pcmPower1[2]:
       <<: *LIMITS_ALERT
-      limits: [23.5, null]
-      alertFmt: 'Input power is failing!!: {value}V'
-    pcmPower[bus2]:
+      limits: [27, null]
+      alertFmt: '24V-UPS Input power is failing!!: {value}V'
+    pcmPower2[2]:
       <<: *LIMITS_ALERT
-      limits: [23.5, null]
-      alertFmt: 'Input power is failing!!: {value}V'
-
-  dcb:
-    atenVAW:
+      limits: [24, null]
+      alertFmt: '24V-AUX Input power is failing!!: {value}V'
+    pressure[0]:
+      <<: *LIMITS_ALERT
+      limits: [1e-10, 1e-2]
+      alertFmt: 'Ion gauge pressure is out of range!!: {value} Torr'
+    turboSpeed[0]:
+      <<: *LIMITS_ALERT
+      limits: [89000, null]
+      alertFmt: 'Turbo speed is too low!!: {value}RPM'
+    ionpump1[4]:
+      <<: *LIMITS_ALERT
+      limits: [1e-10, 1e-5]
+      alertFmt: 'Ionpump 1 pressure is out of range!!: {value}Torr'
+    ionpump2[4]:
+      <<: *LIMITS_ALERT
+      limits: [1e-10, 1e-5]
+      alertFmt: 'Ionpump 2 pressure is out of range!!: {value}Torr'
+    coolerTemps[3]:
+      <<: *LIMITS_ALERT
+      limits: [70, null]
+      alertFmt: 'Cooler power is failing!!: {value}W'
+    heaters[4]:
+      <<: *LIMITS_ALERT
+      limits: [0, null]
+      alertFmt: 'CCD heater should be on !!: {value}'
+    temps:
       <<: *ALERT
-      call: dcb.checkTempRange
-    atenVAW[0]:
-      <<: *LIMITS_ALERT
-      limits: [100, 120]
-      alertFmt: 'Input voltage is failing!!: {value}V'
-    atenVAW[1]:
-      <<: *LIMITS_ALERT
-      limits: [1, 3]
-      alertFmt: 'Input Current is failing!!: {value}A'
+      call: xcu.checkTempRange
+
+  enu_{smId}:
+    temps1:
+      <<: *ALERT
+      call: enu.checkTempRange
+    temps2:
+      <<: *ALERT
+      call: enu.checkTempRange

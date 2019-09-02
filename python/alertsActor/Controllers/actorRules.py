@@ -8,6 +8,7 @@ from functools import partial
 import numpy as np
 import yaml
 from STSpy.STSpy import radio, datum
+from opscore.protocols import types
 
 
 class Alert(object):
@@ -29,11 +30,16 @@ class Alert(object):
 class LimitsAlert(Alert):
     def __init__(self, call, alertFmt, limits, ind=0):
         Alert.__init__(self, call=call, alertFmt=alertFmt, ind=ind)
-        self.lowBound = limits[0] if limits[0] is not None else -np.inf
-        self.upBound = limits[1] if limits[1] is not None else np.inf
+        self.lowBound = float(limits[0]) if limits[0] is not None else -np.inf
+        self.upBound = float(limits[1]) if limits[1] is not None else np.inf
 
     def check(self, keyword):
-        value = keyword.getValue()[self.ind]
+        values = keyword.getValue(doRaise=False)
+        value = values[self.ind] if isinstance(values, tuple) else values
+
+        if isinstance(value, types.Invalid):
+            return '{key}[{ind}] : is unknown'.format(**dict(key=keyword.name, ind=self.ind))
+
         if not self.lowBound < value < self.upBound:
             alertState = self.alertFmt.format(**dict(value=value))
         else:
@@ -85,6 +91,8 @@ class STSCallback(object):
             return datum.Datum.IntegerWithText, int(key)
         elif isinstance(key, str):
             return datum.Datum.Text, str(key)
+        elif isinstance(key, types.Invalid):
+            return datum.Datum.FloatWithText, np.nan
         else:
             raise TypeError('do not know how to convert a %s' % (key))
 
@@ -96,7 +104,6 @@ class STSCallback(object):
 
         for f_i, f in enumerate(self.stsMap):
             keyFieldId, stsId = f
-            val = key[keyFieldId]
             alertState = self.actor.getAlertState(self.actorName, key, keyFieldId)
             stsType, val = self.keyToStsTypeAndValue(key[keyFieldId])
             self.logger.debug('updating STSid %d(%s) from %s.%s[%s] with (%s, %s)',
@@ -118,6 +125,9 @@ class ActorRules(object):
         self.cbs = []
 
     def start(self, cmd):
+        if self.name not in self.actor.models:
+            self.actor.addModels([self.name])
+
         self.setAlerts()
         self.connectSts()
 
@@ -128,25 +138,36 @@ class ActorRules(object):
             for field in range(len(keyVar)):
                 self.actor.clearAlert(self.name, keyVar, field=field)
 
-    def getConfig(self, file):
+    def getConfig(self, file, name=None):
         """ Load model and config """
         with open(os.path.expandvars(f'$ICS_ALERTSACTOR_DIR/config/{file}'), 'r') as cfgFile:
             cfg = yaml.load(cfgFile)
 
         cfgActors = cfg['actors']
-        if self.name not in cfgActors:
-            raise KeyError(f'STS not configured for {self.name} ')
+        name = self.name if name is None else name
+
+        if name not in cfgActors:
+            raise RuntimeError(f'STS not configured for {name} ')
 
         try:
             model = self.actor.models[self.name].keyVarDict
         except KeyError:
             raise KeyError(f'actor model for {self.name} is not loaded')
 
-        return model, cfgActors[self.name]
+        return model, cfgActors[name]
+
+    def getAlertConfig(self, name=None):
+        """ Load keywordAlerts config """
+        try:
+            ret = self.getConfig('keywordAlerts.yaml', name=name)
+        except RuntimeError:
+            ret = None, []
+
+        return ret
 
     def setAlerts(self):
         """ Create and set Alerts state """
-        model, cfg = self.getConfig('keywordAlerts.yaml')
+        model, cfg = self.getAlertConfig()
 
         for keyName in cfg:
             keyConfig = cfg[keyName]
