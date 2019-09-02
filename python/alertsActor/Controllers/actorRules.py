@@ -4,10 +4,12 @@ import os
 import re
 import time
 from functools import partial
+
 import numpy as np
 import yaml
 from STSpy.STSpy import radio, datum
 from opscore.protocols import types
+
 
 class Alert(object):
     def __init__(self, call, alertFmt, ind=0, **kwargs):
@@ -32,8 +34,11 @@ class LimitsAlert(Alert):
         self.upBound = float(limits[1]) if limits[1] is not None else np.inf
 
     def check(self, keyword):
-        values = keyword.getValue()
+        values = keyword.getValue(doRaise=False)
         value = values[self.ind] if isinstance(values, tuple) else values
+
+        if isinstance(value, types.Invalid):
+            return '{key}[{ind}] : is unknown'.format(**dict(key=keyword.name, ind=self.ind))
 
         if not self.lowBound < value < self.upBound:
             alertState = self.alertFmt.format(**dict(value=value))
