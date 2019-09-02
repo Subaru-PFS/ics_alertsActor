@@ -76,7 +76,7 @@ actors:
       alertFmt: '24V-AUX Input power is failing!!: {value}V'
     pressure[0]:
       <<: *LIMITS_ALERT
-      limits: [1e-10, 1e-2]
+      limits: [1e-10, 1e-02]
       alertFmt: 'Ion gauge pressure is out of range!!: {value} Torr'
     turboSpeed[0]:
       <<: *LIMITS_ALERT
@@ -84,15 +84,19 @@ actors:
       alertFmt: 'Turbo speed is too low!!: {value}RPM'
     ionpump1[4]:
       <<: *LIMITS_ALERT
-      limits: [1e-10, 1e-5]
+      limits: [1e-10, 1e-05]
       alertFmt: 'Ionpump 1 pressure is out of range!!: {value}Torr'
     ionpump2[4]:
       <<: *LIMITS_ALERT
-      limits: [1e-10, 1e-5]
+      limits: [1e-10, 1e-05]
       alertFmt: 'Ionpump 2 pressure is out of range!!: {value}Torr'
+    coolerTemps[1]:
+      <<: *LIMITS_ALERT
+      limits: [null, 32]
+      alertFmt: 'Cooler reject is too high!!: {value}C'
     coolerTemps[3]:
       <<: *LIMITS_ALERT
-      limits: [70, null]
+      limits: [69, null]
       alertFmt: 'Cooler power is failing!!: {value}W'
     heaters[4]:
       <<: *LIMITS_ALERT
@@ -109,3 +113,16 @@ actors:
     temps2:
       <<: *ALERT
       call: enu.checkTempRange
+
+  tests:
+    keytest1:
+      <<: *ALERT
+      call: tests.checkTempRange
+    keytest2[1]:
+      <<: *LIMITS_ALERT
+      limits: [0, 30]
+      alertFmt: 'keytest2 is out of range !!: {value}'
+    keytest3:
+      <<: *LIMITS_ALERT
+      limits: [null, 1e-06]
+      alertFmt: 'keytest3 is too high!!: {value}'
