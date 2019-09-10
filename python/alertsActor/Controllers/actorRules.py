@@ -128,8 +128,8 @@ class ActorRules(object):
         if self.name not in self.actor.models:
             self.actor.addModels([self.name])
 
-        self.setAlerts()
         self.connectSts()
+        self.setAlerts()
 
     def stop(self, cmd):
         for keyVar, cb in self.cbs:
@@ -178,8 +178,16 @@ class ActorRules(object):
                 raise KeyError(f'keyvar {keyName} is not in the {self.name} model')
 
             fields = [i for i in range(len(keyVar))] if fields is None else fields
+            try:
+                [cb] = [cb for kv, cb in self.cbs if kv == keyVar]
+                stsConfig = dict(cb.stsMap)
+            except ValueError:
+                raise KeyError(f'keyvar {keyName} is not described in STS.yaml')
 
             for field in fields:
+                if field not in stsConfig.keys():
+                    raise KeyError(f'{keyName}[{field}] is not described in STS.yaml')
+
                 alert = AlertObj(ind=field, **keyConfig)
                 self.actor.setAlertState(actor=self.name, keyword=keyVar, newState=alert, field=field)
 
