@@ -7,6 +7,7 @@ from functools import partial
 
 import numpy as np
 import yaml
+from actorcore.QThread import QThread
 from STSpy.STSpy import radio, datum
 from opscore.protocols import types
 
@@ -76,11 +77,15 @@ def getFields(keyName):
 
 
 class STSCallback(object):
+    TIMEOUT = 180
+
     def __init__(self, actorName, stsMap, actor, logger):
         self.actorName = actorName
         self.stsMap = stsMap
         self.actor = actor
         self.logger = logger
+
+        self.now = int(time.time())
 
     def keyToStsTypeAndValue(self, key):
         """ Return the STS type for theActor given key. """
@@ -90,21 +95,28 @@ class STSCallback(object):
         elif isinstance(key, int):
             return datum.Datum.IntegerWithText, int(key)
         elif isinstance(key, str):
-            return datum.Datum.Text, str(key)
+            return datum.Datum.FloatWithText, np.nan
         elif isinstance(key, types.Invalid):
+            return datum.Datum.FloatWithText, np.nan
+        elif key is None:
             return datum.Datum.FloatWithText, np.nan
         else:
             raise TypeError('do not know how to convert a %s' % (key))
 
-    def __call__(self, key):
+    def __call__(self, key, new=True):
         """ This function is called when new keys are received by the dispatcher. """
-
         toSend = []
         now = int(time.time())
+        self.now = now if new else self.now
+        uptodate = (now - self.now) < STSCallback.TIMEOUT
+
+        if not new and uptodate:
+            return
 
         for f_i, f in enumerate(self.stsMap):
             keyFieldId, stsId = f
-            alertState = self.actor.getAlertState(self.actorName, key, keyFieldId)
+            alertFunc = self.actor.getAlertState if uptodate else self.timeout
+            alertState = alertFunc(self.actorName, key, keyFieldId, delta=(now - self.now))
             stsType, val = self.keyToStsTypeAndValue(key[keyFieldId])
             self.logger.debug('updating STSid %d(%s) from %s.%s[%s] with (%s, %s)',
                               stsId, stsType,
@@ -116,11 +128,13 @@ class STSCallback(object):
         stsServer = radio.Radio()
         stsServer.transmit(toSend)
 
+    def timeout(self, actor, key, keyFieldId, delta):
+        return f'{actor} {key}[{keyFieldId}] NO DATA since {delta} s'
 
-class ActorRules(object):
+
+class ActorRules(QThread):
     def __init__(self, actor, name):
-        self.name = name
-        self.actor = actor
+        QThread.__init__(self, actor, name, timeout=60)
         self.logger = logging.getLogger(f'alerts_{name}')
         self.cbs = []
 
@@ -131,12 +145,16 @@ class ActorRules(object):
         self.setAlerts()
         self.connectSts()
 
+        QThread.start(self)
+
     def stop(self, cmd):
         for keyVar, cb in self.cbs:
             self.logger.warn('removing callback: %s', cb)
             keyVar.removeCallback(cb)
             for field in range(len(keyVar)):
                 self.actor.clearAlert(self.name, keyVar, field=field)
+
+        self.exit()
 
     def getConfig(self, file, name=None):
         """ Load model and config """
@@ -200,3 +218,10 @@ class ActorRules(object):
 
             keyVar.addCallback(cb, callNow=False)
             self.cbs.append((keyVar, cb))
+
+    def handleTimeout(self, cmd=None):
+        if self.exitASAP:
+            raise SystemExit()
+
+        for keyVar, cb in self.cbs:
+            cb(keyVar, new=False)
