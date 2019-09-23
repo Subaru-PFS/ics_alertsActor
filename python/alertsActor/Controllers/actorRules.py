@@ -52,8 +52,21 @@ class LimitsAlert(Alert):
 class RegexpAlert(Alert):
     def __init__(self, call, alertFmt, pattern, invert, ind=0):
         Alert.__init__(self, call=call, alertFmt=alertFmt, ind=ind)
+        pattern = r"^OK$" if pattern is None else pattern
         self.pattern = pattern
-        self.invert = invert
+        self.invert = bool(invert)
+
+    def check(self, keyword):
+        values = keyword.getValue(doRaise=False)
+        value = values[self.ind] if isinstance(values, tuple) else values
+        alert = re.match(self.pattern, value) is None
+        alert = not alert if self.invert else alert
+        if alert:
+            alertState = self.alertFmt.format(**dict(value=value))
+        else:
+            alertState = 'OK'
+
+        return alertState
 
 
 def AlertObj(alertType, **kwargs):
