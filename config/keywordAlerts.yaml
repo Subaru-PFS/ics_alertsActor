@@ -74,35 +74,38 @@ actors:
       <<: *LIMITS_ALERT
       limits: [24, null]
       alertFmt: '24V-AUX Input power is failing!!: {value}V'
-    pressure[0]:
-      <<: *LIMITS_ALERT
-      limits: [1e-10, 1e-02]
-      alertFmt: 'Ion gauge pressure is out of range!!: {value} Torr'
-    turboSpeed[0]:
-      <<: *LIMITS_ALERT
-      limits: [89000, null]
-      alertFmt: 'Turbo speed is too low!!: {value}RPM'
-    ionpump1[4]:
-      <<: *LIMITS_ALERT
-      limits: [1e-10, 1e-05]
-      alertFmt: 'Ionpump 1 pressure is out of range!!: {value}Torr'
-    ionpump2[4]:
-      <<: *LIMITS_ALERT
-      limits: [1e-10, 1e-05]
-      alertFmt: 'Ionpump 2 pressure is out of range!!: {value}Torr'
-    coolerTemps[1]:
-      <<: *LIMITS_ALERT
-      limits: [null, 32]
-      alertFmt: 'Cooler reject is too high!!: {value}C'
-    coolerTemps[3]:
-      <<: *LIMITS_ALERT
-      limits: [69, null]
-      alertFmt: 'Cooler power is failing!!: {value}W'
-    heaters[4]:
-      <<: *LIMITS_ALERT
-      limits: [0, null]
-      alertFmt: 'CCD heater should be on !!: {value}'
-    temps:
+
+    ionpump1Errors[1]:
+      <<: *REGEXP_ALERT
+      alertFmt: 'ionPump1 : {value} !!'
+
+    ionpump2Errors[1]:
+      <<: *REGEXP_ALERT
+      alertFmt: 'ionPump2 : {value} !!'
+
+    coolerStatus[2]:
+      <<: *REGEXP_ALERT
+      alertFmt: 'COOLER : {value} !!'
+
+    temps[0]:
+      <<: *ALERT
+      call: xcu.checkTempRange
+    temps[1]:
+      <<: *ALERT
+      call: xcu.checkTempRange
+    temps[2]:
+      <<: *ALERT
+      call: xcu.checkTempRange
+    temps[3]:
+      <<: *ALERT
+      call: xcu.checkTempRange
+    temps[4]:
+      <<: *ALERT
+      call: xcu.checkTempRange
+    temps[10]:
+      <<: *ALERT
+      call: xcu.checkTempRange
+    temps[11]:
       <<: *ALERT
       call: xcu.checkTempRange
 
