@@ -1,0 +1,54 @@
+################################################################
+#
+# Actual alerts below
+#
+
+# We group all keyword alerts by actor
+#
+_alert: &ALERT
+  limits: [null, null]
+
+vis:
+  off:
+    null
+  standby:
+    null
+  pumpdown:
+    coolerTemps[2]:
+      <<: *ALERT
+      limits: [null, 40.9]
+
+  cooldown:
+    coolerTemps[2]:
+      <<: *ALERT
+      limits: [135, 136]
+
+  operation:
+    null
+  warmup:
+    null
+  bakeout:
+    null
+
+
+nir:
+  off:
+    null
+  standby:
+    null
+  pumpdown:
+    coolerTemps[2]:
+      <<: *ALERT
+      limits: [null, 40.9]
+
+  cooldown:
+    coolerTemps[2]:
+      <<: *ALERT
+      limits: [135, 136]
+
+  operation:
+    null
+  warmup:
+    null
+  bakeout:
+    null

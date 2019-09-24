@@ -36,6 +36,15 @@ _regexpAlert: &REGEXP_ALERT
   pattern: null
   invert: False
 
+_viscuAlert: &VISCU_ALERT
+  <<: *ALERT
+  alertType: viscu
+
+_nircuAlert: &NIRCU_ALERT
+  <<: *ALERT
+  alertType: nircu
+
+
 ################################################################
 #
 # Actual alerts below
@@ -66,48 +75,14 @@ actors:
       alertFmt: 'temperature out of range'
 
   xcu_{cam}:                    # All XCUs
-    pcmPower1[2]:
-      <<: *LIMITS_ALERT
-      limits: [27, null]
-      alertFmt: '24V-UPS Input power is failing!!: {value}V'
-    pcmPower2[2]:
-      <<: *LIMITS_ALERT
-      limits: [24, null]
-      alertFmt: '24V-AUX Input power is failing!!: {value}V'
+    coolerTemps[2]:
+      <<: *VISCU_ALERT
+      alertFmt: 'Cooler tip is out of range : {value}K !!'
 
-    ionpump1Errors[1]:
-      <<: *REGEXP_ALERT
-      alertFmt: 'ionPump1 : {value} !!'
+    ionpump1[0]:
+      <<: *ALERT
+      call: xcu.ionpumpState
 
-    ionpump2Errors[1]:
-      <<: *REGEXP_ALERT
-      alertFmt: 'ionPump2 : {value} !!'
-
-    coolerStatus[2]:
-      <<: *REGEXP_ALERT
-      alertFmt: 'COOLER : {value} !!'
-
-    temps[0]:
-      <<: *ALERT
-      call: xcu.checkTempRange
-    temps[1]:
-      <<: *ALERT
-      call: xcu.checkTempRange
-    temps[2]:
-      <<: *ALERT
-      call: xcu.checkTempRange
-    temps[3]:
-      <<: *ALERT
-      call: xcu.checkTempRange
-    temps[4]:
-      <<: *ALERT
-      call: xcu.checkTempRange
-    temps[10]:
-      <<: *ALERT
-      call: xcu.checkTempRange
-    temps[11]:
-      <<: *ALERT
-      call: xcu.checkTempRange
 
   enu_{smId}:
     temps1:
