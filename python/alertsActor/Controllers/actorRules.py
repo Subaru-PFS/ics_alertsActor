@@ -1,83 +1,14 @@
-import importlib
 import logging
 import os
 import re
 import time
-from functools import partial
 
 import numpy as np
 import yaml
-from actorcore.QThread import QThread
 from STSpy.STSpy import radio, datum
+from actorcore.QThread import QThread
+from alertsActor.Controllers.alerts import createAlert
 from opscore.protocols import types
-
-
-class Alert(object):
-    def __init__(self, call, alertFmt, ind=0, **kwargs):
-        if call != True:
-            modname, funcname = call.split('.')
-            module = importlib.import_module(modname)
-            self.call = partial(getattr(module, funcname), self)
-        else:
-            self.call = self.check
-
-        self.alertFmt = alertFmt
-        self.ind = ind
-
-    def check(self, keyword):
-        return "OK"
-
-
-class LimitsAlert(Alert):
-    def __init__(self, call, alertFmt, limits, ind=0):
-        Alert.__init__(self, call=call, alertFmt=alertFmt, ind=ind)
-        self.lowBound = float(limits[0]) if limits[0] is not None else -np.inf
-        self.upBound = float(limits[1]) if limits[1] is not None else np.inf
-
-    def check(self, keyword):
-        values = keyword.getValue(doRaise=False)
-        value = values[self.ind] if isinstance(values, tuple) else values
-
-        if isinstance(value, types.Invalid):
-            return '{key}[{ind}] : is unknown'.format(**dict(key=keyword.name, ind=self.ind))
-
-        if not self.lowBound < value < self.upBound:
-            alertState = self.alertFmt.format(**dict(value=value))
-        else:
-            alertState = "OK"
-
-        return alertState
-
-
-class RegexpAlert(Alert):
-    def __init__(self, call, alertFmt, pattern, invert, ind=0):
-        Alert.__init__(self, call=call, alertFmt=alertFmt, ind=ind)
-        pattern = r"^OK$" if pattern is None else pattern
-        self.pattern = pattern
-        self.invert = bool(invert)
-
-    def check(self, keyword):
-        values = keyword.getValue(doRaise=False)
-        value = values[self.ind] if isinstance(values, tuple) else values
-        alert = re.match(self.pattern, value) is None
-        alert = not alert if self.invert else alert
-        if alert:
-            alertState = self.alertFmt.format(**dict(value=value))
-        else:
-            alertState = 'OK'
-
-        return alertState
-
-
-def AlertObj(alertType, **kwargs):
-    if alertType == 'trigger':
-        return Alert(**kwargs)
-    elif alertType == 'limits':
-        return LimitsAlert(**kwargs)
-    elif alertType == 'regexp':
-        return RegexpAlert(**kwargs)
-    else:
-        raise KeyError('unknown alertType')
 
 
 def getFields(keyName):
@@ -142,7 +73,7 @@ class STSCallback(object):
         stsServer.transmit(toSend)
 
     def timeout(self, actor, key, keyFieldId, delta):
-        return f'{actor} {key}[{keyFieldId}] NO DATA since {delta} s'
+        return f'{actor} {key.name}[{keyFieldId}] NO DATA since {delta} s'
 
 
 class ActorRules(QThread):
@@ -219,7 +150,7 @@ class ActorRules(QThread):
                 if field not in stsConfig.keys():
                     raise KeyError(f'{keyName}[{field}] is not described in STS.yaml')
 
-                alert = AlertObj(ind=field, **keyConfig)
+                alert = createAlert(self, ind=field, **keyConfig)
                 self.actor.setAlertState(actor=self.name, keyword=keyVar, newState=alert, field=field)
 
     def connectSts(self):
