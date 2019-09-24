@@ -28,7 +28,7 @@ class OurActor(ICC.ICC):
 
     def getAlertState(self, actor, keyword, field=None, **kwargs):
         alert = self.activeAlerts.get(self._getAlertKey(actor, keyword, field), None)
-        return "OK" if alert is None else alert.call(keyword)
+        return "OK" if alert is None else alert.call(keyword, self.models[actor])
 
     def setAlertState(self, actor, keyword, newState, field=None):
         if newState is None:
