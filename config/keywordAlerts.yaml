@@ -75,6 +75,23 @@ actors:
       alertFmt: 'temperature out of range'
 
   xcu_{cam}:                    # All XCUs
+    pcmPower1[2]:
+      <<: *LIMITS_ALERT
+      limits: [27, null]
+      alertFmt: '24V-UPS Input power is failing!!: {value}V'
+    pcmPower2[2]:
+      <<: *LIMITS_ALERT
+      limits: [24, null]
+      alertFmt: '24V-AUX Input power is failing!!: {value}V'
+    ionpump1Errors[1]:
+      <<: *REGEXP_ALERT
+      alertFmt: 'ionPump1 : {value} !!'
+    ionpump2Errors[1]:
+      <<: *REGEXP_ALERT
+      alertFmt: 'ionPump2 : {value} !!'
+    coolerStatus[2]:
+      <<: *REGEXP_ALERT
+      alertFmt: 'COOLER : {value} !!'
     pressure:
       <<: *VISCU_ALERT
       alertFmt: 'pressure is too high : {value}Torr !!'
