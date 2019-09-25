@@ -6,7 +6,7 @@ from opscore.protocols import types
 reload(actorRules)
 
 
-def checkTempRange(cls, keyword):
+def checkTempRange(cls, keyword, model):
     alertState = "OK"
     values = keyword.getValue(doRaise=False)
     value = values[cls.ind] if isinstance(values, tuple) else values
