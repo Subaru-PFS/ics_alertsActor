@@ -9,26 +9,49 @@ _alert: &ALERT
   limits: [null, null]
 
 vis:
-  off:
+  offline:
     null
   standby:
     null
   pumpdown:
-    coolerTemps[2]:
+    turboSpeed[0]:
       <<: *ALERT
-      limits: [null, 40.9]
-
+      limits: [89000, null]
+    pressure[0]:
+      <<: *ALERT
+      limits: [null, 1]
   cooldown:
-    coolerTemps[2]:
+    coolerTemps[1]:
       <<: *ALERT
-      limits: [135, 136]
-
+      limits: [null, 45]
+    coolerTemps[3]:
+      <<: *ALERT
+      limits: [70, null]
+    pressure[0]:
+      <<: *ALERT
+      limits: [null, 5.0e-6]
   operation:
-    null
+    coolerTemps[1]:
+      <<: *ALERT
+      limits: [null, 35]
+    coolerTemps[3]:
+      <<: *ALERT
+      limits: [70, null]
+    pressure[0]:
+      <<: *ALERT
+      limits: [null, 5.0e-6]
+    temps[10]:
+      <<: *ALERT
+      limits: [null, 164]
+    temps[11]:
+      <<: *ALERT
+      limits: [null, 164]
   warmup:
     null
   bakeout:
-    null
+    turboSpeed[0]:
+      <<: *ALERT
+      limits: [89000, null]
 
 
 nir:
