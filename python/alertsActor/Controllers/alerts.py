@@ -1,8 +1,8 @@
 import importlib
 import re
-import numpy as np
 from functools import partial
 
+import numpy as np
 from opscore.protocols import types
 
 
@@ -43,7 +43,7 @@ class LimitsAlert(Alert):
         upBound = self.limits[1] if lowBound is False else upBound
 
         lowBound = -np.inf if lowBound is None else lowBound
-        upBound = np.inf if lowBound is None else upBound
+        upBound = np.inf if upBound is None else upBound
 
         alertState = Alert.check(self, keyword=keyword, model=model)
         if alertState != 'OK':
@@ -51,7 +51,7 @@ class LimitsAlert(Alert):
 
         value = self.getValue(keyword)
 
-        if not lowBound < value < upBound:
+        if not lowBound <= value <= upBound:
             alertState = self.alertFmt.format(**dict(value=value))
 
         return alertState
