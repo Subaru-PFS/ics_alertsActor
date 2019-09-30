@@ -7,7 +7,8 @@ from opscore.protocols import types
 
 
 class Alert(object):
-    def __init__(self, call, alertFmt, ind=0, **kwargs):
+    def __init__(self, actorRules, call, alertFmt, ind=0, **kwargs):
+        self.actorRules = actorRules
         if isinstance(call, bool):
             self.call = self.check
         else:
@@ -17,6 +18,10 @@ class Alert(object):
 
         self.alertFmt = alertFmt
         self.ind = ind
+
+    @property
+    def name(self):
+        return self.actorRules.name
 
     def getValue(self, keyword):
         values = keyword.getValue(doRaise=False)
@@ -34,8 +39,8 @@ class Alert(object):
 
 
 class LimitsAlert(Alert):
-    def __init__(self, call, alertFmt, limits, ind=0):
-        Alert.__init__(self, call=call, alertFmt=alertFmt, ind=ind)
+    def __init__(self, actorRules, call, alertFmt, limits, ind=0):
+        Alert.__init__(self, actorRules=actorRules, call=call, alertFmt=alertFmt, ind=ind)
         self.limits = limits
 
     def check(self, keyword, model, lowBound=False, upBound=False):
@@ -52,15 +57,14 @@ class LimitsAlert(Alert):
         value = self.getValue(keyword)
 
         if not lowBound <= value <= upBound:
-            alertState = self.alertFmt.format(**dict(value=value))
+            alertState = self.alertFmt.format(**dict(name=self.name, value=value))
 
         return alertState
 
 
 class CuAlert(LimitsAlert):
     def __init__(self, actorRules, call, alertFmt, ind=0):
-        self.actorRules = actorRules
-        Alert.__init__(self, call=call, alertFmt=alertFmt, ind=ind)
+        Alert.__init__(self, actorRules=actorRules, call=call, alertFmt=alertFmt, ind=ind)
 
     def check(self, keyword, model, lowBound=False, upBound=False):
         mode = self.getValue(model.keyVarDict['cryoMode'])
@@ -75,8 +79,8 @@ class CuAlert(LimitsAlert):
 
 
 class RegexpAlert(Alert):
-    def __init__(self, call, alertFmt, pattern, invert, ind=0):
-        Alert.__init__(self, call=call, alertFmt=alertFmt, ind=ind)
+    def __init__(self, actorRules, call, alertFmt, pattern, invert, ind=0):
+        Alert.__init__(self, actorRules=actorRules, call=call, alertFmt=alertFmt, ind=ind)
         pattern = r"^OK$" if pattern is None else pattern
         self.pattern = pattern
         self.invert = invert
@@ -91,18 +95,18 @@ class RegexpAlert(Alert):
         alert = not alert if self.invert else alert
 
         if alert:
-            alertState = self.alertFmt.format(**dict(value=value))
+            alertState = self.alertFmt.format(**dict(name=self.name, value=value))
 
         return alertState
 
 
 def createAlert(actorRules, alertType, **kwargs):
     if alertType == 'trigger':
-        return Alert(**kwargs)
+        return Alert(actorRules, **kwargs)
     elif alertType == 'limits':
-        return LimitsAlert(**kwargs)
+        return LimitsAlert(actorRules, **kwargs)
     elif alertType == 'regexp':
-        return RegexpAlert(**kwargs)
+        return RegexpAlert(actorRules, **kwargs)
     elif alertType in ['viscu', 'nircu']:
         return CuAlert(actorRules, **kwargs)
     else:

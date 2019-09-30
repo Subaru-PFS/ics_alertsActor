@@ -78,47 +78,47 @@ actors:
     pcmPower1[2]:
       <<: *LIMITS_ALERT
       limits: [27, null]
-      alertFmt: '24V-UPS Input power is failing!!: {value}V'
+      alertFmt: '{name} 24V-UPS Input power is failing!!: {value}V'
     pcmPower2[2]:
       <<: *LIMITS_ALERT
       limits: [24, null]
-      alertFmt: '24V-AUX Input power is failing!!: {value}V'
+      alertFmt: '{name} 24V-AUX Input power is failing!!: {value}V'
     ionpump1Errors[1]:
       <<: *REGEXP_ALERT
-      alertFmt: 'ionPump1 : {value} !!'
+      alertFmt: '{name} ionPump1 : {value} !!'
     ionpump2Errors[1]:
       <<: *REGEXP_ALERT
-      alertFmt: 'ionPump2 : {value} !!'
+      alertFmt: '{name} ionPump2 : {value} !!'
     coolerStatus[2]:
       <<: *REGEXP_ALERT
-      alertFmt: 'COOLER : {value} !!'
+      alertFmt: '{name} COOLER : {value} !!'
     pressure:
       <<: *VISCU_ALERT
-      alertFmt: 'pressure is too high : {value}Torr !!'
+      alertFmt: '{name} pressure is too high : {value}Torr !!'
     turboSpeed:
       <<: *VISCU_ALERT
-      alertFmt: 'turbo speed is too low : {value}RPM !!'
+      alertFmt: '{name} turbo speed is too low : {value}RPM !!'
     coolerTemps[1]:
       <<: *VISCU_ALERT
-      alertFmt: 'Cooler reject is too high : {value}C !!'
+      alertFmt: '{name} Cooler reject is too high : {value}C !!'
     coolerTemps[3]:
       <<: *VISCU_ALERT
-      alertFmt: 'Cooler power is out of range : {value}W !!'
+      alertFmt: '{name} Cooler power is out of range : {value}W !!'
     temps[10]:
       <<: *VISCU_ALERT
-      alertFmt: 'Detector strap 1 temperature is too high : {value}K !!'
+      alertFmt: '{name} Detector strap 1 temperature is too high : {value}K !!'
     temps[11]:
       <<: *VISCU_ALERT
-      alertFmt: 'Detector strap 2 temperature is too high : {value}K !!'
+      alertFmt: '{name} Detector strap 2 temperature is too high : {value}K !!'
 
     ionpump1[0]:
       <<: *ALERT
       call: xcu.ionpumpState
-      alertFmt: 'ionpump1 should be on !!'
+      alertFmt: '{name} ionpump1 should be on !!'
     ionpump2[0]:
       <<: *ALERT
       call: xcu.ionpumpState
-      alertFmt: 'ionpump2 should be on !!'
+      alertFmt: '{name} ionpump2 should be on !!'
     gatevalve[1]:
       <<: *ALERT
       call: xcu.gatevalveState

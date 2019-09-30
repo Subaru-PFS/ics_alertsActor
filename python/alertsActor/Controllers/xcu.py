@@ -27,7 +27,7 @@ def ionpumpState(cls, keyword, model):
     state = cls.getValue(keyword)
 
     if mode in ['cooldown', 'operation'] and not state:
-        return cls.alertFmt.format(**dict(value=state))
+        return cls.alertFmt.format(**dict(name=cls.name, value=state))
 
     return "OK"
 
@@ -37,13 +37,13 @@ def gatevalveState(cls, keyword, model):
     state = cls.getValue(keyword)
 
     if state in ['Invalid', 'Unknown'] and mode not in ['offline', 'standby']:
-        return f'Gatevalve {state} state !!'
+        return f'{cls.name} Gatevalve {state} state !!'
 
     if mode in ['pumpdown', 'bakeout'] and state != 'Open':
-        return 'Gatevalve should be open !!'
+        return f'{cls.name} Gatevalve should be open !!'
 
     if mode in ['cooldown', 'operation'] and state != 'Closed':
-        return 'Gatevalve should be closed !!'
+        return f'{cls.name} Gatevalve should be closed !!'
 
     return "OK"
 
