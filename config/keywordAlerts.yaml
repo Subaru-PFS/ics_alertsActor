@@ -77,16 +77,16 @@ actors:
   xcu_{cam}:                    # All XCUs
     pcmPower1[2]:
       <<: *LIMITS_ALERT
-      limits: [27, null]
+      limits: [27.0, null]
       alertFmt: '{name} 24V-UPS Input power is failing!!: {value}V'
     pcmPower2[2]:
       <<: *LIMITS_ALERT
-      limits: [24, null]
+      limits: [24.0, null]
       alertFmt: '{name} 24V-AUX Input power is failing!!: {value}V'
-    ionpump1Errors[1]:
+    ionpump1Errors[2]:
       <<: *REGEXP_ALERT
       alertFmt: '{name} ionPump1 : {value} !!'
-    ionpump2Errors[1]:
+    ionpump2Errors[2]:
       <<: *REGEXP_ALERT
       alertFmt: '{name} ionPump2 : {value} !!'
     coolerStatus[2]:

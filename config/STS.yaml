@@ -38,9 +38,9 @@ actors:
       [[0, 1129],
        [4, 1130]]
     ionpump1Errors:
-      [[1, 1131]]
+      [[2, 1131]]
     ionpump2Errors:
-      [[1, 1132]]
+      [[2, 1132]]
     pcmPower1:
       [[2, 1133]]
     pcmPower2:
@@ -82,9 +82,9 @@ actors:
       [[0, 1159],
        [4, 1160]]
     ionpump1Errors:
-      [[1, 1161]]
+      [[2, 1161]]
     ionpump2Errors:
-      [[1, 1162]]
+      [[2, 1162]]
     pcmPower1:
       [[2, 1163]]
     pcmPower2:
@@ -131,8 +131,6 @@ actors:
        [7, 1197],
        [8, 1198],
        [9, 1199]]
-    coolerStatus:
-      [[2, 2000]]
 
   tests:
     keytest1:
