@@ -33,7 +33,7 @@ class Alert(object):
         value = self.getValue(keyword)
 
         if isinstance(value, types.Invalid):
-            return '{key}[{ind}] : is unknown'.format(**dict(key=keyword.name, ind=self.ind))
+            return f'{self.name} {keyword.name}[{self.ind}] : is unknown'
 
         return 'OK'
 
@@ -45,7 +45,7 @@ class LimitsAlert(Alert):
 
     def check(self, keyword, model, lowBound=False, upBound=False):
         lowBound = self.limits[0] if lowBound is False else lowBound
-        upBound = self.limits[1] if lowBound is False else upBound
+        upBound = self.limits[1] if upBound is False else upBound
 
         lowBound = -np.inf if lowBound is None else lowBound
         upBound = np.inf if upBound is None else upBound
