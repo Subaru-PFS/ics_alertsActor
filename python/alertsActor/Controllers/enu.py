@@ -12,10 +12,10 @@ def checkTempRange(cls, keyword, model):
     value = values[cls.ind] if isinstance(values, tuple) else values
 
     if isinstance(value, types.Invalid):
-        return '{key}[{ind}] : is unknown'.format(**dict(key=keyword.name, ind=cls.ind))
+        return f'{cls.name} {keyword.name}[{cls.ind}] : is unknown'
 
-    if not 0 < value < 30:
-        alertState = '{key}[{ind}] : {value}C out of range'.format(**dict(key=keyword.name, ind=cls.ind, value=value))
+    if not 0 <= value <= 30:
+        alertState = f'{cls.name} {keyword.name}[{cls.ind}] : {value}C out of range'
 
     return alertState
 

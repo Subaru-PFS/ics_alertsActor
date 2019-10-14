@@ -135,11 +135,13 @@ actors:
     keytest1:
       <<: *ALERT
       call: tests.checkTempRange
-    keytest2[1]:
+    keytest2:
       <<: *LIMITS_ALERT
-      limits: [0, 30]
-      alertFmt: 'keytest2 is out of range !!: {value}'
-    keytest3:
-      <<: *LIMITS_ALERT
-      limits: [null, 1e-06]
+      limits: [null, 1.0e-06]
       alertFmt: 'keytest3 is too high!!: {value}'
+    keytest3[1]:
+      <<: *REGEXP_ALERT
+      alertFmt: 'test regexp : {value} !!'
+
+
+
