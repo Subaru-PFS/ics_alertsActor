@@ -3,6 +3,7 @@ from importlib import reload
 
 import alertsActor.Controllers.actorRules as actorRules
 import yaml
+from alertsActor.Controllers.alerts import CuAlert
 from opscore.protocols import types
 
 reload(actorRules)
@@ -18,6 +19,15 @@ def checkTempRange(cls, keyword, model):
 
     if not 80 < value < 330:
         alertState = '{key}[{ind}] : {value}K out of range'.format(**dict(key=keyword.name, ind=cls.ind, value=value))
+
+    return alertState
+
+
+def coolerPower(cls, keyword, model):
+    mode = cls.getValue(model.keyVarDict['cryoMode'])
+    alertState = CuAlert.check(cls, keyword, model)
+    if mode == 'standby':
+        return 'OK'
 
     return alertState
 
