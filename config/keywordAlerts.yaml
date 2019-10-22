@@ -102,7 +102,8 @@ actors:
       <<: *VISCU_ALERT
       alertFmt: '{name} Cooler reject is too high : {value}C !!'
     coolerTemps[3]:
-      <<: *VISCU_ALERT
+      <<: *ALERT
+      call: xcu.coolerPower
       alertFmt: '{name} Cooler power is out of range : {value}W !!'
     temps[10]:
       <<: *VISCU_ALERT
