@@ -1,6 +1,22 @@
 import opscore
 import opscore.protocols.types as types
 
+vis = dict(cooler2Loop=4 * [''], cooler2Status=6 * [''], cooler2Temps=4 * [''],
+           temps=['Detector Box', 'Mangin', 'Spider', 'Thermal Spreader', 'Front Ring Barrel', '', '', '', '', '',
+                  'Detector 1', 'Detector 2'],
+           heaters=4 * [''] + 4 * [None],
+           sampower=[''])
+
+nir = dict(temps=['Mirror Cell 1', 'Mangin', 'Mirror Cell 2', 'SiC Spreader', 'Front Ring', 'Spreader Pan', '',
+                  'Radiation Shield 1', 'Radiation Shield 2', 'Sidecar', 'Detector 1', 'Detector 2'],
+           heaters=4 * [None] + 4 * [''])
+
+override = dict()
+for smId in range(1, 5):
+    override[f'xcu_b{smId}'] = vis
+    override[f'xcu_r{smId}'] = vis
+    override[f'xcu_n{smId}'] = nir
+
 
 def stsIdFromModel(cmd, modelName, stsPrimaryId):
     """
@@ -17,6 +33,8 @@ def stsIdFromModel(cmd, modelName, stsPrimaryId):
 
     keysIds = dict()
     model = opscore.actor.model.Model(modelName)
+    overrideKeys = override[modelName] if modelName in override.keys() else dict()
+
     for mk, mv in model.keyVarDict.items():
 
         try:
@@ -27,7 +45,15 @@ def stsIdFromModel(cmd, modelName, stsPrimaryId):
                 try:
                     if not hasattr(kvt, 'STS') or kvt.STS is None:
                         continue
+                    try:
+                        overrideLabel = overrideKeys[mk][kv_i]
+                    except KeyError:
+                        overrideLabel = None
 
+                    if not overrideLabel and overrideLabel is not None:
+                        continue
+
+                    stsLabel = kvt.help if overrideLabel is None else overrideLabel
                     offset = kvt.STS
 
                     # Hackery: bool cannot be subclassed, so we need to check the keyword class
@@ -48,7 +74,7 @@ def stsIdFromModel(cmd, modelName, stsPrimaryId):
                         raise TypeError('unknown type')
 
                     stsIds.append(dict(keyId=kv_i, stsId=stsPrimaryId + offset,
-                                       stsType=stsType, stsHelp=kvt.help))
+                                       stsType=stsType, stsHelp=stsLabel))
                 except Exception as e:
                     cmd.warn(f'text="FAILED to generate stsIDs for {mk}[{kv_i}], {kvt}: {e}"')
 
