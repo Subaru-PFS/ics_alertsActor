@@ -1,4 +1,3 @@
-import opscore
 import opscore.protocols.types as types
 
 vis = dict(cooler2Loop=4 * [''], cooler2Status=6 * [''], cooler2Temps=4 * [''],
@@ -18,7 +17,7 @@ for smId in range(1, 5):
     override[f'xcu_n{smId}'] = nir
 
 
-def stsIdFromModel(cmd, modelName, stsPrimaryId):
+def stsIdFromModel(cmd, model, stsPrimaryId):
     """
     For a given actorkeys model, return a list of all the FITS cards listed therein.
 
@@ -32,7 +31,7 @@ def stsIdFromModel(cmd, modelName, stsPrimaryId):
     """
 
     keysIds = dict()
-    model = opscore.actor.model.Model(modelName)
+    modelName = model.actor
     overrideKeys = override[modelName] if modelName in override.keys() else dict()
 
     for mk, mv in model.keyVarDict.items():

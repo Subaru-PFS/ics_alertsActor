@@ -57,14 +57,15 @@ class STSCallback(object):
         if not new and uptodate:
             return
 
-        for f_i, f in enumerate(self.stsMap):
-            keyFieldId, stsId = f
+        for stsMap in self.stsMap:
+            keyId, stsHelp, stsId, stsType = stsMap['keyId'], stsMap['stsHelp'], stsMap['stsId'], stsMap['stsType']
             alertFunc = self.actor.getAlertState if uptodate else self.timeout
-            alertState = alertFunc(self.actorName, key, keyFieldId, delta=(now - self.now))
-            stsType, val = self.keyToStsTypeAndValue(key[keyFieldId])
+            alertState = alertFunc(self.actorName, key, keyId, delta=(now - self.now))
+            stsType, val = self.keyToStsTypeAndValue(key[keyId])
+
             self.logger.debug('updating STSid %d(%s) from %s.%s[%s] with (%s, %s)',
                               stsId, stsType,
-                              key.actor, key.name, keyFieldId,
+                              key.actor, key.name, keyId,
                               val, alertState)
             toSend.append(stsType(stsId, timestamp=now, value=(val, alertState)))
 
@@ -142,7 +143,7 @@ class ActorRules(QThread):
             fields = [i for i in range(len(keyVar))] if fields is None else fields
             try:
                 [cb] = [cb for kv, cb in self.cbs if kv == keyVar]
-                stsConfig = dict(cb.stsMap)
+                stsConfig = dict([(stsKey['keyId'], stsKey) for stsKey in cb.stsMap])
             except ValueError:
                 raise KeyError(f'keyvar {keyName} is not described in STS.yaml')
 

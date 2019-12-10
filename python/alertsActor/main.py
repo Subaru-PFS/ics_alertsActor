@@ -34,8 +34,10 @@ class OurActor(ICC.ICC):
 
     def genSTS(self, cmd):
         stsConfig = dict(actors={})
+        self.addModels(self.stsPrimaryIds.keys())
+
         for modelName, stsPrimaryId in self.stsPrimaryIds.items():
-            stsConfig['actors'][modelName] = stsIdFromModel(cmd, modelName, stsPrimaryId)
+            stsConfig['actors'][modelName] = stsIdFromModel(cmd, self.models[modelName], stsPrimaryId)
 
         with open(os.path.expandvars(f'$ICS_ALERTSACTOR_DIR/config/STS.yaml'), 'w') as stsFile:
             yaml.dump(stsConfig, stsFile)
