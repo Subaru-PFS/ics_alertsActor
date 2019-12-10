@@ -105,10 +105,10 @@ actors:
       <<: *ALERT
       call: xcu.coolerPower
       alertFmt: '{name} Cooler power is out of range : {value}W !!'
-    temps[10]:
+    visTemps[5]:
       <<: *VISCU_ALERT
       alertFmt: '{name} Detector strap 1 temperature is too high : {value}K !!'
-    temps[11]:
+    visTemps[6]:
       <<: *VISCU_ALERT
       alertFmt: '{name} Detector strap 2 temperature is too high : {value}K !!'
 

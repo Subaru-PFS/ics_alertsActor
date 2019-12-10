@@ -12,10 +12,10 @@ from alertsActor.utils import stsIdFromModel
 
 class OurActor(ICC.ICC):
     stsPrimaryIds = dict(meb=1096,
-                         xcu_r1=1120,
-                         xcu_b1=1180,
-                         enu_sm1=1240,
-                         rough1=1270)
+                         xcu_r1=1140,
+                         xcu_b1=1200,
+                         enu_sm1=1260,
+                         rough1=1280)
 
     def __init__(self, name,
                  productName=None, configFile=None,
@@ -31,11 +31,10 @@ class OurActor(ICC.ICC):
 
         self.logger.setLevel(logLevel)
         self.activeAlerts = OrderedDict()
+        self.addModels(self.stsPrimaryIds.keys())
 
     def genSTS(self, cmd):
         stsConfig = dict(actors={})
-        self.addModels(self.stsPrimaryIds.keys())
-
         for modelName, stsPrimaryId in self.stsPrimaryIds.items():
             stsConfig['actors'][modelName] = stsIdFromModel(cmd, self.models[modelName], stsPrimaryId)
 

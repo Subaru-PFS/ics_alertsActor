@@ -1,164 +1,265 @@
 actors:
+  enu_sm1: {}
   meb:
-    temps: [[0, 1096],        # Get rid of the CHARIS hack below before using.
-            [1, 1097],
-            [2, 1098],
-            [3, 1099],
-            [4, 1100],
-            [5, 1101],
-            [6, 1102]]
+    flow:
+    - keyId: 0
+      stsHelp: 'PFS: MEB Flow meter reading'
+      stsId: 1107
+      stsType: FLOAT+TEXT
+      units: Hz
     power:
-      [[0, 1103],
-       [1, 1104],
-       [2, 1105],
-       [3, 1106]]
-    flow: [[0, 1107]]
-
-  dcb:
-    atenVAW:
-      [[0, 1108],
-       [1, 1109],
-       [2, 1110]]
-
+    - keyId: 0
+      stsHelp: 'PFS: MEB Camera Power'
+      stsId: 1103
+      stsType: INTEGER+TEXT
+      units: V
+    - keyId: 1
+      stsHelp: 'PFS: MEB Shutter and Temp Power'
+      stsId: 1104
+      stsType: INTEGER+TEXT
+      units: V
+    - keyId: 2
+      stsHelp: 'PFS: MEB Cisco Switch Power'
+      stsId: 1105
+      stsType: INTEGER+TEXT
+      units: V
+    - keyId: 3
+      stsHelp: 'PFS: MEB Computer Power'
+      stsId: 1106
+      stsType: INTEGER+TEXT
+      units: V
+    temps:
+    - keyId: 0
+      stsHelp: 'PFS: MEB Top plate temp'
+      stsId: 1096
+      stsType: FLOAT+TEXT
+      units: degC
+    - keyId: 1
+      stsHelp: 'PFS: MEB Carbon fiber tube temp'
+      stsId: 1097
+      stsType: FLOAT+TEXT
+      units: degC
+    - keyId: 2
+      stsHelp: 'PFS: MEB Primary mirror temp'
+      stsId: 1098
+      stsType: FLOAT+TEXT
+      units: degC
+    - keyId: 3
+      stsHelp: 'PFS: MEB Cover panel temp'
+      stsId: 1099
+      stsType: FLOAT+TEXT
+      units: degC
+    - keyId: 4
+      stsHelp: 'PFS: MEB Coolant inlet temp'
+      stsId: 1100
+      stsType: FLOAT+TEXT
+      units: degC
+    - keyId: 5
+      stsHelp: 'PFS: MEB Coolant outlet temp'
+      stsId: 1101
+      stsType: FLOAT+TEXT
+      units: degC
+    - keyId: 6
+      stsHelp: 'PFS: MEB Electronics rack temp'
+      stsId: 1102
+      stsType: FLOAT+TEXT
+      units: degC
+  rough1:
+    pressure:
+    - keyId: 0
+      stsHelp: 'PFS: ROUGH1 roughing line pressure'
+      stsId: 1281
+      stsType: FLOAT+TEXT
+      units: Torr
+    pumpSpeed:
+    - keyId: 0
+      stsHelp: 'PFS: ROUGH1 roughing pump speed'
+      stsId: 1280
+      stsType: FLOAT+TEXT
+      units: rpm
   xcu_b1:
     coolerStatus:
-      [[0, 1120],
-       [2, 1121]]
+    - keyId: 2
+      stsHelp: 'PFS: XCU_B1 Cooler1 error string'
+      stsId: 1200
+      stsType: INTEGER+TEXT
+      units: null
     coolerTemps:
-      [[0, 1122],
-       [1, 1123],
-       [2, 1124],
-       [3, 1125]]
-    pressure:
-      [[0, 1126]]
-    ionpump1:
-      [[0, 1127],
-       [4, 1128]]
-    ionpump2:
-      [[0, 1129],
-       [4, 1130]]
-    ionpump1Errors:
-      [[2, 1131]]
-    ionpump2Errors:
-      [[2, 1132]]
-    pcmPower1:
-      [[2, 1133]]
-    pcmPower2:
-      [[2, 1134]]
-    temps:
-      [[0, 1135],
-       [1, 1136],
-       [2, 1137],
-       [3, 1138],
-       [4, 1139],
-       [10, 1140],
-       [11, 1141]]
-    heaters:
-      [[4, 1142],
-       [5, 1143],
-       [6, 1144],
-       [7, 1145]]
+    - keyId: 1
+      stsHelp: 'PFS: XCU_B1 Cooler1 reject temperature'
+      stsId: 1201
+      stsType: FLOAT+TEXT
+      units: degC
+    - keyId: 3
+      stsHelp: 'PFS: XCU_B1 Cooler1 load'
+      stsId: 1202
+      stsType: FLOAT+TEXT
+      units: W
     gatevalve:
-      [[0, 1146],
-       [1, 1147]]
+    - keyId: 1
+      stsHelp: 'PFS: XCU_B1 actual gatevalve position'
+      stsId: 1214
+      stsType: INTEGER+TEXT
+      units: null
+    ionpump1:
+    - keyId: 0
+      stsHelp: 'PFS: XCU_B1 ionpump1 enabled'
+      stsId: 1204
+      stsType: INTEGER+TEXT
+      units: null
+    - keyId: 4
+      stsHelp: 'PFS: XCU_B1 ionpump1 pressure'
+      stsId: 1205
+      stsType: FLOAT+TEXT
+      units: Torr
+    ionpump1Errors:
+    - keyId: 2
+      stsHelp: 'PFS: XCU_B1 ionpump1 error string'
+      stsId: 1208
+      stsType: INTEGER+TEXT
+      units: null
+    ionpump2:
+    - keyId: 0
+      stsHelp: 'PFS: XCU_B1 ionpump2 enabled'
+      stsId: 1206
+      stsType: INTEGER+TEXT
+      units: null
+    - keyId: 4
+      stsHelp: 'PFS: XCU_B1 ionpump2 pressure'
+      stsId: 1207
+      stsType: FLOAT+TEXT
+      units: Torr
+    ionpump2Errors:
+    - keyId: 2
+      stsHelp: 'PFS: XCU_B1 ionpump2 error string'
+      stsId: 1209
+      stsType: INTEGER+TEXT
+      units: null
+    pcmPower1:
+    - keyId: 2
+      stsHelp: 'PFS: XCU_B1 PCM bus 1 input voltage'
+      stsId: 1210
+      stsType: FLOAT+TEXT
+      units: V
+    pcmPower2:
+    - keyId: 2
+      stsHelp: 'PFS: XCU_B1 PCM bus 2 input voltage'
+      stsId: 1211
+      stsType: FLOAT+TEXT
+      units: V
+    pressure:
+    - keyId: 0
+      stsHelp: 'PFS: XCU_B1 Ion gauge pressure'
+      stsId: 1203
+      stsType: FLOAT+TEXT
+      units: Torr
     turboSpeed:
-      [[0, 1148]]
-
+    - keyId: 0
+      stsHelp: 'PFS: XCU_B1 turbo pump speed'
+      stsId: 1215
+      stsType: INTEGER+TEXT
+      units: rpm
+    visTemps:
+    - keyId: 5
+      stsHelp: 'PFS: XCU_B1 Detector probe #1'
+      stsId: 1212
+      stsType: FLOAT+TEXT
+      units: K
+    - keyId: 6
+      stsHelp: 'PFS: XCU_B1 Detector probe #2'
+      stsId: 1213
+      stsType: FLOAT+TEXT
+      units: K
   xcu_r1:
     coolerStatus:
-      [[0, 1150],
-       [2, 1151]]
+    - keyId: 2
+      stsHelp: 'PFS: XCU_R1 Cooler1 error string'
+      stsId: 1140
+      stsType: INTEGER+TEXT
+      units: null
     coolerTemps:
-      [[0, 1152],
-       [1, 1153],
-       [2, 1154],
-       [3, 1155]]
-    pressure:
-      [[0, 1156]]
-    ionpump1:
-      [[0, 1157],
-       [4, 1158]]
-    ionpump2:
-      [[0, 1159],
-       [4, 1160]]
-    ionpump1Errors:
-      [[2, 1161]]
-    ionpump2Errors:
-      [[2, 1162]]
-    pcmPower1:
-      [[2, 1163]]
-    pcmPower2:
-      [[2, 1164]]
-    temps:
-      [[0, 1165],
-       [1, 1166],
-       [2, 1167],
-       [3, 1168],
-       [4, 1169],
-       [10, 1170],
-       [11, 1171]]
-    heaters:
-      [[4, 1172],
-       [5, 1173],
-       [6, 1174],
-       [7, 1175]]
+    - keyId: 1
+      stsHelp: 'PFS: XCU_R1 Cooler1 reject temperature'
+      stsId: 1141
+      stsType: FLOAT+TEXT
+      units: degC
+    - keyId: 3
+      stsHelp: 'PFS: XCU_R1 Cooler1 load'
+      stsId: 1142
+      stsType: FLOAT+TEXT
+      units: W
     gatevalve:
-      [[0, 1176],
-       [1, 1177]]
+    - keyId: 1
+      stsHelp: 'PFS: XCU_R1 actual gatevalve position'
+      stsId: 1154
+      stsType: INTEGER+TEXT
+      units: null
+    ionpump1:
+    - keyId: 0
+      stsHelp: 'PFS: XCU_R1 ionpump1 enabled'
+      stsId: 1144
+      stsType: INTEGER+TEXT
+      units: null
+    - keyId: 4
+      stsHelp: 'PFS: XCU_R1 ionpump1 pressure'
+      stsId: 1145
+      stsType: FLOAT+TEXT
+      units: Torr
+    ionpump1Errors:
+    - keyId: 2
+      stsHelp: 'PFS: XCU_R1 ionpump1 error string'
+      stsId: 1148
+      stsType: INTEGER+TEXT
+      units: null
+    ionpump2:
+    - keyId: 0
+      stsHelp: 'PFS: XCU_R1 ionpump2 enabled'
+      stsId: 1146
+      stsType: INTEGER+TEXT
+      units: null
+    - keyId: 4
+      stsHelp: 'PFS: XCU_R1 ionpump2 pressure'
+      stsId: 1147
+      stsType: FLOAT+TEXT
+      units: Torr
+    ionpump2Errors:
+    - keyId: 2
+      stsHelp: 'PFS: XCU_R1 ionpump2 error string'
+      stsId: 1149
+      stsType: INTEGER+TEXT
+      units: null
+    pcmPower1:
+    - keyId: 2
+      stsHelp: 'PFS: XCU_R1 PCM bus 1 input voltage'
+      stsId: 1150
+      stsType: FLOAT+TEXT
+      units: V
+    pcmPower2:
+    - keyId: 2
+      stsHelp: 'PFS: XCU_R1 PCM bus 2 input voltage'
+      stsId: 1151
+      stsType: FLOAT+TEXT
+      units: V
+    pressure:
+    - keyId: 0
+      stsHelp: 'PFS: XCU_R1 Ion gauge pressure'
+      stsId: 1143
+      stsType: FLOAT+TEXT
+      units: Torr
     turboSpeed:
-      [[0, 1178]]
-
-  enu_sm1:
-    temps1:
-      [[0, 1180],
-       [1, 1181],
-       [2, 1182],
-       [3, 1183],
-       [4, 1184],
-       [5, 1185],
-       [6, 1186],
-       [7, 1187],
-       [8, 1188],
-       [9, 1189]]
-    temps2:
-      [[0, 1190],
-       [1, 1191],
-       [2, 1192],
-       [3, 1193],
-       [4, 1194],
-       [5, 1195],
-       [6, 1196],
-       [7, 1197],
-       [8, 1198],
-       [9, 1199]]
-
-  tests:
-    keytest1:
-      [[0, 2010],
-       [1, 2011]]
-    keytest2:
-      [[0, 2012]]
-    keytest3:
-      [[0, 2013],
-       [1, 2014]]
-
-
-
-
-
-#  mcs:
-#    ccdTemp: [[0, 1108]]
-
-# 1096, "FLOAT+TEXT", "PFS: MCS MEB Temp 1"
-# 1097, "FLOAT+TEXT", "PFS: MCS MEB Temp 2"
-# 1098, "FLOAT+TEXT", "PFS: MCS MEB Temp 3"
-# 1099, "FLOAT+TEXT", "PFS: MCS MEB Temp 4"
-# 1100, "FLOAT+TEXT", "PFS: MCS MEB Temp 5"
-# 1101, "FLOAT+TEXT", "PFS: MCS MEB Temp 6"
-# 1102, "FLOAT+TEXT", "PFS: MCS MEB Temp 7"
-# 1103, "INTEGER+TEXT", "PFS: MCS MEB Power 1"
-# 1104, "INTEGER+TEXT", "PFS: MCS MEB Power 2"
-# 1105, "INTEGER+TEXT", "PFS: MCS MEB Power 3"
-# 1106, "INTEGER+TEXT", "PFS: MCS MEB Power 4"
-# 1107, "FLOAT+TEXT", "PFS: MCS MEB Flow"
-# 1108, "FLOAT+TEXT", "PFS: MCS MCS CCD Temp"
+    - keyId: 0
+      stsHelp: 'PFS: XCU_R1 turbo pump speed'
+      stsId: 1155
+      stsType: INTEGER+TEXT
+      units: rpm
+    visTemps:
+    - keyId: 5
+      stsHelp: 'PFS: XCU_R1 Detector probe #1'
+      stsId: 1152
+      stsType: FLOAT+TEXT
+      units: K
+    - keyId: 6
+      stsHelp: 'PFS: XCU_R1 Detector probe #2'
+      stsId: 1153
+      stsType: FLOAT+TEXT
+      units: K
