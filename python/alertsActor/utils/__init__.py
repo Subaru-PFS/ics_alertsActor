@@ -1,9 +1,9 @@
 import opscore.protocols.types as types
 
 vis = dict(cooler2Loop=4 * [''], cooler2Status=6 * [''], cooler2Temps=4 * [''],
-           temps=['Detector Box', 'Mangin', 'Spider', 'Thermal Spreader', 'Front Ring Barrel', '', '', '', '', '',
-                  'Detector 1', 'Detector 2'],
-           heaters=4 * [''] + 4 * [None],
+           temps=['Detector Box Temp', 'Mangin Temp', 'Spider Temp', 'Thermal Spreader Temp', 'Front Ring Temp', '', '', '', '', '',
+                  'Detector Strap 1 Temp', 'Detector Strap 2 Temp'],
+           heaters=4 * [''] + [None, None, 'ccd heater frac power', 'spreader heater frac power'],
            sampower=[''])
 
 nir = dict(temps=['Mirror Cell 1', 'Mangin', 'Mirror Cell 2', 'SiC Spreader', 'Front Ring', 'Spreader Pan', '',
@@ -53,6 +53,7 @@ def stsIdFromModel(cmd, model, stsPrimaryId):
                         continue
 
                     stsLabel = kvt.help if overrideLabel is None else overrideLabel
+                    fullLabel = f'PFS: {modelName.upper()} {stsLabel}'
                     offset = kvt.STS
 
                     # Hackery: bool cannot be subclassed, so we need to check the keyword class
@@ -61,19 +62,21 @@ def stsIdFromModel(cmd, model, stsPrimaryId):
                     else:
                         baseType = kvt.__class__.baseType
 
-                    if issubclass(baseType, float):
+                    if issubclass(baseType, types.Enum):
+                        stsType = 'INTEGER+TEXT'
+                    elif issubclass(baseType, float):
                         stsType = 'FLOAT+TEXT'
                     elif issubclass(baseType, int):
                         stsType = 'INTEGER+TEXT'
                     elif issubclass(baseType, str):
-                        stsType = 'FLOAT+TEXT'
+                        stsType = 'INTEGER+TEXT'
                     elif issubclass(baseType, bool):
                         stsType = 'INTEGER+TEXT'
                     else:
                         raise TypeError('unknown type')
 
                     stsIds.append(dict(keyId=kv_i, stsId=stsPrimaryId + offset,
-                                       stsType=stsType, stsHelp=stsLabel))
+                                       stsType=stsType, stsHelp=fullLabel, units=kvt.units))
                 except Exception as e:
                     cmd.warn(f'text="FAILED to generate stsIDs for {mk}[{kv_i}], {kvt}: {e}"')
 
