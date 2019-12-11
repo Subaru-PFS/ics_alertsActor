@@ -8,7 +8,6 @@ import yaml
 from STSpy.STSpy import radio, datum
 from actorcore.QThread import QThread
 from alertsActor.Controllers.alerts import createAlert
-from opscore.protocols import types
 
 
 def getFields(keyName):
@@ -31,21 +30,24 @@ class STSCallback(object):
 
         self.now = int(time.time())
 
-    def keyToStsTypeAndValue(self, key):
+    def keyToStsTypeAndValue(self, stsType, key, alertState):
         """ Return the STS type for theActor given key. """
+        if stsType == 'FLOAT+TEXT':
+            stsType = datum.Datum.FloatWithText
+            val = float(key) if isinstance(key, float) else np.nan
+            return stsType, val
 
-        if isinstance(key, float):
-            return datum.Datum.FloatWithText, float(key)
-        elif isinstance(key, int):
-            return datum.Datum.IntegerWithText, int(key)
-        elif isinstance(key, str):
-            return datum.Datum.FloatWithText, np.nan
-        elif isinstance(key, types.Invalid):
-            return datum.Datum.FloatWithText, np.nan
-        elif key is None:
-            return datum.Datum.FloatWithText, np.nan
+        elif stsType == 'INTEGER+TEXT':
+            stsType = datum.Datum.IntegerWithText
+            if isinstance(key, int):
+                val = int(key)
+            elif isinstance(key, str):
+                val = 1 if alertState != 'OK' else 0
+            else:
+                val = -9999
+            return stsType, val
         else:
-            raise TypeError('do not know how to convert a %s' % (key))
+            raise TypeError(f'do not know how to convert a {stsType}')
 
     def __call__(self, key, new=True):
         """ This function is called when new keys are received by the dispatcher. """
@@ -57,14 +59,15 @@ class STSCallback(object):
         if not new and uptodate:
             return
 
-        for f_i, f in enumerate(self.stsMap):
-            keyFieldId, stsId = f
+        for stsMap in self.stsMap:
+            keyId, stsHelp, stsId, stsType = stsMap['keyId'], stsMap['stsHelp'], stsMap['stsId'], stsMap['stsType']
             alertFunc = self.actor.getAlertState if uptodate else self.timeout
-            alertState = alertFunc(self.actorName, key, keyFieldId, delta=(now - self.now))
-            stsType, val = self.keyToStsTypeAndValue(key[keyFieldId])
+            alertState = alertFunc(self.actorName, key, keyId, delta=(now - self.now))
+            stsType, val = self.keyToStsTypeAndValue(stsType, key[keyId], alertState)
+
             self.logger.debug('updating STSid %d(%s) from %s.%s[%s] with (%s, %s)',
                               stsId, stsType,
-                              key.actor, key.name, keyFieldId,
+                              key.actor, key.name, keyId,
                               val, alertState)
             toSend.append(stsType(stsId, timestamp=now, value=(val, alertState)))
 
@@ -142,7 +145,7 @@ class ActorRules(QThread):
             fields = [i for i in range(len(keyVar))] if fields is None else fields
             try:
                 [cb] = [cb for kv, cb in self.cbs if kv == keyVar]
-                stsConfig = dict(cb.stsMap)
+                stsConfig = dict([(stsKey['keyId'], stsKey) for stsKey in cb.stsMap])
             except ValueError:
                 raise KeyError(f'keyvar {keyName} is not described in STS.yaml')
 

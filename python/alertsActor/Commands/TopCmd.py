@@ -16,6 +16,7 @@ class TopCmd(object):
         self.vocab = [
             ('ping', '', self.ping),
             ('status', '', self.status),
+            ('genSTS', '', self.genSTS)
         ]
 
         # Define typed command arguments for the above commands.
@@ -37,3 +38,6 @@ class TopCmd(object):
         cmd.inform('text="Present!"')
         cmd.finish()
 
+    def genSTS(self, cmd):
+        self.actor.genSTS(cmd)
+        cmd.finish()

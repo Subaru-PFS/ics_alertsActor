@@ -2,12 +2,21 @@
 
 import argparse
 import logging
+import os
 from collections import OrderedDict
 
+import yaml
 from actorcore import ICC
+from alertsActor.utils import stsIdFromModel
 
 
 class OurActor(ICC.ICC):
+    stsPrimaryIds = dict(meb=1096,
+                         xcu_r1=1140,
+                         xcu_b1=1200,
+                         enu_sm1=1260,
+                         rough1=1280)
+
     def __init__(self, name,
                  productName=None, configFile=None,
                  logLevel=logging.DEBUG):
@@ -22,6 +31,15 @@ class OurActor(ICC.ICC):
 
         self.logger.setLevel(logLevel)
         self.activeAlerts = OrderedDict()
+        self.addModels(self.stsPrimaryIds.keys())
+
+    def genSTS(self, cmd):
+        stsConfig = dict(actors={})
+        for modelName, stsPrimaryId in self.stsPrimaryIds.items():
+            stsConfig['actors'][modelName] = stsIdFromModel(cmd, self.models[modelName], stsPrimaryId)
+
+        with open(os.path.expandvars(f'$ICS_ALERTSACTOR_DIR/config/STS.yaml'), 'w') as stsFile:
+            yaml.dump(stsConfig, stsFile)
 
     def _getAlertKey(self, actor, keyword, field=None):
         return (actor, keyword.name, field)

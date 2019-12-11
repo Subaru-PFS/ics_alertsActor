@@ -40,10 +40,10 @@ vis:
     pressure[0]:
       <<: *ALERT
       limits: [null, 5.0e-6]
-    temps[10]:
+    visTemps[5]:
       <<: *ALERT
       limits: [null, 164]
-    temps[11]:
+    visTemps[6]:
       <<: *ALERT
       limits: [null, 164]
   warmup:
