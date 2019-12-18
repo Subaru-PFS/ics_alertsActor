@@ -19,8 +19,45 @@ def getFields(keyName):
     return keyName, m
 
 
+class STSBuffer(list):
+    samplingTime = 300
+
+    def __init__(self, logger):
+        list.__init__(self)
+        self.logger = logger
+        self.sent = dict()
+
+    def filterTraffic(self):
+        return [datum for datum in self.__iter__() if self.doSend(datum)]
+
+    def check(self, datum):
+        try:
+            prev = self.sent[datum.id]
+        except KeyError:
+            return True
+
+        if (datum.timestamp - prev.timestamp) > STSBuffer.samplingTime:
+            return True
+
+        prevValue, prevState = prev.value
+        currValue, currState = datum.value
+
+        if (currState != 'OK' and prevState == 'OK') or (currState == 'OK' and prevState != 'OK'):
+            return True
+
+        return False
+
+    def doSend(self, datum):
+        doSend = self.check(datum)
+        if doSend:
+            self.sent[datum.id] = datum
+        else:
+            self.logger.info(f'not forwarded to STS : {datum}')
+        return doSend
+
+
 class STSCallback(object):
-    TIMEOUT = 180
+    TIMEOUT = 600
 
     def __init__(self, actorName, stsMap, actor, logger):
         self.actorName = actorName
@@ -29,6 +66,7 @@ class STSCallback(object):
         self.logger = logger
 
         self.now = int(time.time())
+        self.stsBuffer = STSBuffer(logger)
 
     def keyToStsTypeAndValue(self, stsType, key, alertState):
         """ Return the STS type for theActor given key. """
@@ -51,7 +89,6 @@ class STSCallback(object):
 
     def __call__(self, key, new=True):
         """ This function is called when new keys are received by the dispatcher. """
-        toSend = []
         now = int(time.time())
         self.now = now if new else self.now
         uptodate = (now - self.now) < STSCallback.TIMEOUT
@@ -69,8 +106,10 @@ class STSCallback(object):
                               stsId, stsType,
                               key.actor, key.name, keyId,
                               val, alertState)
-            toSend.append(stsType(stsId, timestamp=now, value=(val, alertState)))
 
+            self.stsBuffer.append(stsType(stsId, timestamp=now, value=(val, alertState)))
+
+        toSend = self.stsBuffer.filterTraffic()
         self.logger.info('flushing STS, with: %s', toSend)
         stsServer = radio.Radio()
         stsServer.transmit(toSend)
