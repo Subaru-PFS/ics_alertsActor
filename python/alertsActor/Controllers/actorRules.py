@@ -42,7 +42,7 @@ class STSBuffer(list):
         prevValue, prevState = prev.value
         currValue, currState = datum.value
 
-        if currState != prevState:
+        if (currState != 'OK' and prevState == 'OK') or (currState == 'OK' and prevState != 'OK'):
             return True
 
         return False
