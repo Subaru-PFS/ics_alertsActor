@@ -20,7 +20,7 @@ def getFields(keyName):
 
 
 class STSBuffer(list):
-    samplingTime = 120
+    samplingTime = 300
 
     def __init__(self, logger):
         list.__init__(self)
