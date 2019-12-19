@@ -52,6 +52,12 @@ vis:
     turboSpeed[0]:
       <<: *ALERT
       limits: [89000, null]
+    visTemps[5]:
+      <<: *ALERT
+      limits: [null, 330]
+    visTemps[6]:
+      <<: *ALERT
+      limits: [null, 330]
 
 
 nir:
