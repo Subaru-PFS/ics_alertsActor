@@ -113,6 +113,7 @@ class STSCallback(object):
         self.logger.info('flushing STS, with: %s', toSend)
         stsServer = radio.Radio()
         stsServer.transmit(toSend)
+        self.stsBuffer.clear()
 
     def timeout(self, actor, key, keyFieldId, delta):
         return f'{actor} {key.name}[{keyFieldId}] NO DATA since {delta} s'
