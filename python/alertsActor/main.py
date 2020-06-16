@@ -3,20 +3,11 @@
 import argparse
 import logging
 import os
-from collections import OrderedDict
 
-import yaml
 from actorcore import ICC
-from alertsActor.utils import stsIdFromModel
-
+from alertsActor.utils import sts as stsUtils
 
 class OurActor(ICC.ICC):
-    stsPrimaryIds = dict(meb=1096,
-                         xcu_r1=1140,
-                         xcu_b1=1200,
-                         enu_sm1=1260,
-                         rough1=1280)
-
     def __init__(self, name,
                  productName=None, configFile=None,
                  logLevel=logging.DEBUG):
@@ -29,17 +20,33 @@ class OurActor(ICC.ICC):
                          productName=productName,
                          configFile=configFile)
 
+        self.everConnected = False
+
         self.logger.setLevel(logLevel)
-        self.activeAlerts = OrderedDict()
-        self.addModels(self.stsPrimaryIds.keys())
+        self.activeAlerts = dict()
+        parts = [part.strip() for part in self.config.get('alerts', 'parts').split(',')]
+        self.stsPrimaryIds = stsUtils.parseAlertsModels(parts, cmd=self.bcast)
 
-    def genSTS(self, cmd):
-        stsConfig = dict(actors={})
-        for modelName, stsPrimaryId in self.stsPrimaryIds.items():
-            stsConfig['actors'][modelName] = stsIdFromModel(cmd, self.models[modelName], stsPrimaryId)
+    def connectionMade(self):
+        if self.everConnected is False:
+            self.everConnected = True
+            models = self.stsPrimaryIds.keys()
+            logging.info("loading STS models: %s", models)
+            self.addModels(self.stsPrimaryIds.keys())
 
-        with open(os.path.expandvars(f'$ICS_ALERTSACTOR_DIR/config/STS.yaml'), 'w') as stsFile:
-            yaml.dump(stsConfig, stsFile)
+            # While we are here, load the actor rules.
+            for model in models:
+                # Should have normalized rough actor names to rough_N.
+                if '_' in model:
+                    name = model
+                    model = name.split('_')[0]
+                elif model[-1].isdigit():
+                    name = model
+                    model = model[:-1]
+                else:
+                    name = model
+
+                self.callCommand(f'connect controller={model} name={name}')
 
     def _getAlertKey(self, actor, keyword, field=None):
         return (actor, keyword.name, field)
