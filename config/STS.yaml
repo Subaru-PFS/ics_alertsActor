@@ -6,7 +6,7 @@ actors:
       stsHelp: 'PFS: MEB Flow meter reading'
       stsId: 1107
       stsType: FLOAT+TEXT
-      units: Hz
+      units: Gal/min
     power:
     - keyId: 0
       stsHelp: 'PFS: MEB Camera Power'
@@ -68,13 +68,13 @@ actors:
     pressure:
     - keyId: 0
       stsHelp: 'PFS: ROUGH1 roughing line pressure'
-      stsId: 1281
+      stsId: 1941
       stsType: FLOAT+TEXT
       units: Torr
     pumpSpeed:
     - keyId: 0
       stsHelp: 'PFS: ROUGH1 roughing pump speed'
-      stsId: 1280
+      stsId: 1940
       stsType: FLOAT+TEXT
       units: rpm
   xcu_b1:
@@ -161,12 +161,12 @@ actors:
       units: rpm
     visTemps:
     - keyId: 5
-      stsHelp: 'PFS: XCU_B1 Detector probe #1'
+      stsHelp: 'PFS: XCU_B1 Detector probe #1 temp'
       stsId: 1212
       stsType: FLOAT+TEXT
       units: K
     - keyId: 6
-      stsHelp: 'PFS: XCU_B1 Detector probe #2'
+      stsHelp: 'PFS: XCU_B1 Detector probe #2 temp'
       stsId: 1213
       stsType: FLOAT+TEXT
       units: K
@@ -254,12 +254,12 @@ actors:
       units: rpm
     visTemps:
     - keyId: 5
-      stsHelp: 'PFS: XCU_R1 Detector probe #1'
+      stsHelp: 'PFS: XCU_R1 Detector probe #1 temp'
       stsId: 1152
       stsType: FLOAT+TEXT
       units: K
     - keyId: 6
-      stsHelp: 'PFS: XCU_R1 Detector probe #2'
+      stsHelp: 'PFS: XCU_R1 Detector probe #2 temp'
       stsId: 1153
       stsType: FLOAT+TEXT
       units: K
