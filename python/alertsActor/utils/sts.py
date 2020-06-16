@@ -54,6 +54,11 @@ def roughBase(roughNum):
 
     return stsSpsBase + 4*stsModuleCount + (roughNum-1)*stsRoughCount
 
+def actorBase(name):
+    if name == 'meb':
+        return 1096
+    return None
+
 def parseAlertsModels(parts, cmd=None):
     """Generate a list of models from the list of parts, and their STS radio ID bases
 
@@ -84,6 +89,10 @@ def parseAlertsModels(parts, cmd=None):
     for p in parts:
         if re.search('^rough[12]$', p) is not None:
             stsModels[p] = roughBase(int(p[-1]))
+        elif re.search('^enu_sm[1-9]$', p) is not None:
+            sm = int(p[-1])
+            modelName = p
+            stsModels[modelName] = enuBase(sm)
         elif re.search('^[brn][1-9]$', p) is not None:
             sm = int(p[-1])
             arm = p[-2]
@@ -97,7 +106,12 @@ def parseAlertsModels(parts, cmd=None):
                 modelName = f'xcu_{arm}{sm}'
                 stsModels[modelName] = camBase(smNum=sm, arm=arm)
         else:
-            raise ValueError(f"invalid alerts part: {p}")
+            modelName = p
+            idBase = actorBase(modelName)
+            if idBase is None:
+                raise ValueError(f"invalid alerts part: {p}")
+            stsModels[modelName] = idBase
+            
     if cmd is not None:
         cmd.inform(f'text="loading STS models: {stsModels}"')
     return stsModels
@@ -124,7 +138,6 @@ def stsIdFromModel(cmd, model, stsPrimaryId):
     overrideKeys = override[modelName] if modelName in override.keys() else dict()
 
     for mk, mv in model.keyVarDict.items():
-
         try:
             # When values are not current, they are structurally invalid. So iterate over the _types_,
             # then pick up the value only when necessary.
