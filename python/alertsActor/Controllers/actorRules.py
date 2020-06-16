@@ -52,7 +52,7 @@ class STSBuffer(list):
         if doSend:
             self.sent[datum.id] = datum
         else:
-            self.logger.info(f'not forwarded to STS : {datum}')
+            self.logger.debug(f'not forwarded to STS : {datum}')
         return doSend
 
 
@@ -102,18 +102,20 @@ class STSCallback(object):
             alertState = alertFunc(self.actorName, key, keyId, delta=(now - self.now))
             stsType, val = self.keyToStsTypeAndValue(stsType, key[keyId], alertState)
 
-            self.logger.debug('updating STSid %d(%s) from %s.%s[%s] with (%s, %s)',
-                              stsId, stsType,
-                              key.actor, key.name, keyId,
-                              val, alertState)
+            self.logger.info('updating STSid %d(%s) from %s.%s[%s] with (%s, %s)',
+                             stsId, stsType.__name__,
+                             key.actor, key.name, keyId,
+                             val, alertState)
 
             self.stsBuffer.append(stsType(stsId, timestamp=now, value=(val, alertState)))
 
         toSend = self.stsBuffer.filterTraffic()
-        self.logger.info('flushing STS, with: %s', toSend)
-        stsServer = radio.Radio()
-        stsServer.transmit(toSend)
-        self.stsBuffer.clear()
+        if len(toSend) > 0:
+            stsHost = self.actor.config.get('sts', 'host')
+            self.logger.debug('flushing STS (host=%s), with: %s', stsHost, toSend)
+            stsServer = radio.Radio(host=stsHost)
+            stsServer.transmit(toSend)
+            self.stsBuffer.clear()
 
     def timeout(self, actor, key, keyFieldId, delta):
         return f'{actor} {key.name}[{keyFieldId}] NO DATA since {delta} s'
@@ -129,8 +131,8 @@ class ActorRules(QThread):
         if self.name not in self.actor.models:
             self.actor.addModels([self.name])
 
-        self.connectSts()
-        self.setAlerts()
+        self.connectSts(cmd)
+        self.setAlerts(cmd)
 
         QThread.start(self)
 
@@ -170,7 +172,7 @@ class ActorRules(QThread):
 
         return ret
 
-    def setAlerts(self):
+    def setAlerts(self, cmd):
         """ Create and set Alerts state """
         model, cfg = self.getAlertConfig()
 
@@ -187,16 +189,17 @@ class ActorRules(QThread):
                 [cb] = [cb for kv, cb in self.cbs if kv == keyVar]
                 stsConfig = dict([(stsKey['keyId'], stsKey) for stsKey in cb.stsMap])
             except ValueError:
-                raise KeyError(f'keyvar {keyName} is not described in STS.yaml')
-
+                cmd.warn(f'text="{self.name}: keyvar {keyName} is not described in STS.yaml"')
+                
             for field in fields:
                 if field not in stsConfig.keys():
-                    raise KeyError(f'{keyName}[{field}] is not described in STS.yaml')
-
+                    cmd.warn(f'text="{self.name}: keyvar {keyName}[{field}] is not described in STS.yaml"')
+                    continue
+                
                 alert = createAlert(self, ind=field, **keyConfig)
                 self.actor.setAlertState(actor=self.name, keyword=keyVar, newState=alert, field=field)
 
-    def connectSts(self):
+    def connectSts(self, cmd):
         """ Check for keywords or field to forward to STS. """
 
         model, cfg = self.getConfig('STS.yaml')
