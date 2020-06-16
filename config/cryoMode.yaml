@@ -58,7 +58,8 @@ vis:
     visTemps[6]:
       <<: *ALERT
       limits: [null, 330]
-
+  unknown:
+    null
 
 nir:
   off:
@@ -80,4 +81,6 @@ nir:
   warmup:
     null
   bakeout:
+    null
+  unknown:
     null

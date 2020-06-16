@@ -1,6 +1,14 @@
+from importlib import reload
+
+import os
+import yaml
+
 import opscore.protocols.keys as keys
 import opscore.protocols.types as types
 from opscore.utility.qstr import qstr
+
+import alertsActor.utils.sts as stsUtils
+reload(stsUtils)
 
 class TopCmd(object):
 
@@ -34,10 +42,18 @@ class TopCmd(object):
         """Report camera status and actor version. """
 
         self.actor.sendVersionKey(cmd)
-        
+        cmd.inform(f'text="controllers: {self.actor.controllers}')
         cmd.inform('text="Present!"')
         cmd.finish()
 
     def genSTS(self, cmd):
-        self.actor.genSTS(cmd)
+        stsConfig = dict(actors={})
+        for modelName, stsPrimaryId in self.actor.stsPrimaryIds.items():
+            cmd.debug('text="generating STS ids for %s starting from %s"' % (modelName,
+                                                                             stsPrimaryId))
+            stsConfig['actors'][modelName] = stsUtils.stsIdFromModel(cmd, self.actor.models[modelName], stsPrimaryId)
+
+        with open(os.path.expandvars(f'$ICS_ALERTSACTOR_DIR/config/STS.yaml'), 'w') as stsFile:
+            yaml.dump(stsConfig, stsFile)
+
         cmd.finish()
