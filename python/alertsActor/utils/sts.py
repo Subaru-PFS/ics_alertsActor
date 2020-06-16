@@ -95,7 +95,7 @@ def parseAlertsModels(parts, cmd=None):
             stsModels[modelName] = enuBase(sm)
             for arm in {'b', 'r', 'n'}:
                 modelName = f'xcu_{arm}{sm}'
-                stsModels[modelName] = camBase(nmNum=sm, arm=arm)
+                stsModels[modelName] = camBase(smNum=sm, arm=arm)
         else:
             raise ValueError(f"invalid alerts part: {p}")
     if cmd is not None:
