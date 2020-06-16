@@ -17,9 +17,9 @@ nir = dict(temps=['Mirror Cell 1', 'Mangin', 'Mirror Cell 2', 'SiC Spreader', 'F
 
 override = dict()
 for smId in range(1, 10):
-    override[f'xcu_b{smId}'] = vis
-    override[f'xcu_r{smId}'] = vis
-    override[f'xcu_n{smId}'] = nir
+    override[f'xcu_b{smId}'] = vis.copy()
+    override[f'xcu_r{smId}'] = vis.copy()
+    override[f'xcu_n{smId}'] = nir.copy()
 
 # JHU optics lab dewars have external pumping carts, manual gatevalves, and analog ionpump contollers.
 override['xcu_n8']['gatevalve'] = False, False, False
