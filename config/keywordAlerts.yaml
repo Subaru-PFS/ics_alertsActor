@@ -74,7 +74,7 @@ actors:
       limits: [10.0, 25.0]
       alertFmt: 'temperature out of range'
 
-  xcu_{cam}:                    # All XCUs
+  xcu: &XCU                    # All XCUs
     pcmPower1[2]:
       <<: *LIMITS_ALERT
       limits: [27.0, null]
@@ -124,7 +124,34 @@ actors:
       <<: *ALERT
       call: xcu.gatevalveState
 
-  enu_{smId}:
+  xcu_b1:
+    <<: *XCU
+  xcu_b2:
+    <<: *XCU
+  xcu_b3:
+    <<: *XCU
+  xcu_b4:
+    <<: *XCU
+
+  xcu_r1:
+    <<: *XCU
+  xcu_r2:
+    <<: *XCU
+  xcu_r3:
+    <<: *XCU
+  xcu_r4:
+    <<: *XCU
+
+  xcu_n1:
+    <<: *XCU
+  xcu_n2:
+    <<: *XCU
+  xcu_n3:
+    <<: *XCU
+  xcu_n4:
+    <<: *XCU
+
+  enu_{smId}: &ENU
     temps1:
       <<: *ALERT
       call: enu.checkTempRange
@@ -132,7 +159,16 @@ actors:
       <<: *ALERT
       call: enu.checkTempRange
 
-  tests:
+  enu_sm1:
+    <<: *ENU
+  enu_sm2:
+    <<: *ENU
+  enu_sm3:
+    <<: *ENU
+  enu_sm4:
+    <<: *ENU
+
+    tests:
     keytest1:
       <<: *ALERT
       call: tests.checkTempRange

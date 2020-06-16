@@ -8,7 +8,7 @@
 _alert: &ALERT
   limits: [null, null]
 
-vis:
+vis: &VIS
   offline:
     null
   standby:
@@ -61,7 +61,8 @@ vis:
   unknown:
     null
 
-nir:
+
+nir: &NIR
   off:
     null
   standby:
@@ -69,18 +70,63 @@ nir:
   pumpdown:
     coolerTemps[2]:
       <<: *ALERT
-      limits: [null, 40.9]
-
+      limits: [null, 40]
+    pressure[0]:
+      <<: *ALERT
+      limits: [null, 5.0e-6]
   cooldown:
     coolerTemps[2]:
       <<: *ALERT
-      limits: [135, 136]
+      limits: [null, 40]
+    pressure[0]:
+      <<: *ALERT
+      limits: [null, 5.0e-6]
 
   operation:
-    null
+    coolerTemps[2]:
+      <<: *ALERT
+      limits: [null, 40]
+    pressure[0]:
+      <<: *ALERT
+      limits: [null, 5.0e-6]
   warmup:
-    null
+    pressure[0]:
+      <<: *ALERT
+      limits: [null, 5.0e-6]
   bakeout:
     null
   unknown:
     null
+
+xcu_n1:
+  <<: *NIR
+xcu_n2:
+  <<: *NIR
+xcu_n3:
+  <<: *NIR
+xcu_n4:
+  <<: *NIR
+
+xcu_b1:
+  <<: *VIS
+xcu_b2:
+  <<: *VIS
+xcu_b3:
+  <<: *VIS
+xcu_b4:
+  <<: *VIS
+
+xcu_r1:
+  <<: *VIS
+xcu_r2:
+  <<: *VIS
+xcu_r3:
+  <<: *VIS
+xcu_r4:
+  <<: *VIS
+
+# JHU Optics lab
+xcu_n8:
+  <<: *NIR
+xcu_r8:
+  <<: *VIS

@@ -33,7 +33,7 @@ from datetime import datetime
 from logging import basicConfig, getLogger, INFO
 from socket import MSG_PEEK
 from socketserver import TCPServer, BaseRequestHandler
-from STSpy import Radio
+from STSpy.STSpy import Radio
 
 class RequestHandler(BaseRequestHandler):
 
