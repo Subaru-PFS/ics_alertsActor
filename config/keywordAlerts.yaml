@@ -24,7 +24,7 @@ _alert: &ALERT
 _limitsAlert: &LIMITS_ALERT
   <<: *ALERT
   alertType: limits
-  limits: [null, null]
+  limits: [ null, null ]
 
 # Template for regexp match alerts:
 #   re: a regular expression
@@ -53,10 +53,10 @@ _nircuAlert: &NIRCU_ALERT
 # We group all keyword alerts by actor
 #
 actors:
-  charis:                       # Just for pre-commissioning testing
+  charis: # Just for pre-commissioning testing
     temps[0]:
       <<: *LIMITS_ALERT
-      limits: [null, 40.9]
+      limits: [ null, 40.9 ]
     temps:
       <<: *ALERT
       call: charis.checkTempRange
@@ -64,24 +64,24 @@ actors:
       <<: *REGEXP_ALERT
       pattern: 'limit switch error'
 
-  meb:                          # MCS E-Box
+  meb: # MCS E-Box
     flow:
       <<: *LIMITS_ALERT
-      limits: [0.0, null]
+      limits: [ 0.0, null ]
       alertFmt: 'coolant flow has stopped'
     temps[0]:
       <<: *LIMITS_ALERT
-      limits: [10.0, 25.0]
+      limits: [ 10.0, 25.0 ]
       alertFmt: 'temperature out of range'
 
-  xcu_{cam}:                    # All XCUs
+  xcu_{cam}: # All XCUs
     pcmPower1[2]:
       <<: *LIMITS_ALERT
-      limits: [27.0, null]
+      limits: [ 27.0, null ]
       alertFmt: '{name} 24V-UPS Input power is failing!!: {value}V'
     pcmPower2[2]:
       <<: *LIMITS_ALERT
-      limits: [24.0, null]
+      limits: [ 24.0, null ]
       alertFmt: '{name} 24V-AUX Input power is failing!!: {value}V'
     ionpump1Errors[2]:
       <<: *REGEXP_ALERT
@@ -125,12 +125,11 @@ actors:
       call: xcu.gatevalveState
 
   enu_{smId}:
-    temps1:
-      <<: *ALERT
-      call: enu.checkTempRange
-    temps2:
-      <<: *ALERT
-      call: enu.checkTempRange
+    biashaFSM[1]:
+      <<: *REGEXP_ALERT
+      pattern: ^FAILED$
+      invert: True
+      alertFmt: '{name} bia-shutter board is in failed state !!'
 
   tests:
     keytest1:
@@ -138,7 +137,7 @@ actors:
       call: tests.checkTempRange
     keytest2:
       <<: *LIMITS_ALERT
-      limits: [null, 1.0e-06]
+      limits: [ null, 1.0e-06 ]
       alertFmt: 'keytest3 is too high!!: {value}'
     keytest3[1]:
       <<: *REGEXP_ALERT
