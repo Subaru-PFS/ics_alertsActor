@@ -1,5 +1,11 @@
 actors:
-  enu_sm1: {}
+  enu_sm1:
+    biashaFSM:
+    - keyId: 1
+      stsHelp: 'PFS: ENU_SM1 biasha state machine'
+      stsId: 1320
+      stsType: INTEGER+TEXT
+      units: null
   meb:
     flow:
     - keyId: 0
@@ -149,7 +155,7 @@ actors:
       units: V
     pressure:
     - keyId: 0
-      stsHelp: 'PFS: XCU_B1 Ion gauge pressure'
+      stsHelp: 'PFS: XCU_B1 Cryostat gauge pressure'
       stsId: 1203
       stsType: FLOAT+TEXT
       units: Torr
@@ -242,7 +248,7 @@ actors:
       units: V
     pressure:
     - keyId: 0
-      stsHelp: 'PFS: XCU_R1 Ion gauge pressure'
+      stsHelp: 'PFS: XCU_R1 Cryostat gauge pressure'
       stsId: 1143
       stsType: FLOAT+TEXT
       units: Torr
