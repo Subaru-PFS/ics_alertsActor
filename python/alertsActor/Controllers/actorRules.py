@@ -99,15 +99,16 @@ class STSCallback(object):
         for stsMap in self.stsMap:
             keyId, stsHelp, stsId, stsType = stsMap['keyId'], stsMap['stsHelp'], stsMap['stsId'], stsMap['stsType']
             alertFunc = self.actor.getAlertState if uptodate else self.timeout
+
             alertState = alertFunc(self.actorName, key, keyId, delta=(now - self.now))
             stsType, val = self.keyToStsTypeAndValue(stsType, key[keyId], alertState)
 
-            self.logger.info('updating STSid %d(%s) from %s.%s[%s] with (%s, %s)',
-                             stsId, stsType.__name__,
-                             key.actor, key.name, keyId,
-                             val, alertState)
+            datum = stsType(stsId, timestamp=now, value=(val, alertState))
+            doSend = self.stsBuffer.check(datum)
 
-            self.stsBuffer.append(stsType(stsId, timestamp=now, value=(val, alertState)))
+            self.logger.info('updating(doSend=%s) STSid %d(%s) from %s.%s[%s] with (%s, %s)',
+                             doSend, stsId, stsType.__name__, key.actor, key.name, keyId, val, alertState)
+            self.stsBuffer.append(datum)
 
         toSend = self.stsBuffer.filterTraffic()
         if len(toSend) > 0:
@@ -190,12 +191,12 @@ class ActorRules(QThread):
                 stsConfig = dict([(stsKey['keyId'], stsKey) for stsKey in cb.stsMap])
             except ValueError:
                 cmd.warn(f'text="{self.name}: keyvar {keyName} is not described in STS.yaml"')
-                
+
             for field in fields:
                 if field not in stsConfig.keys():
                     cmd.warn(f'text="{self.name}: keyvar {keyName}[{field}] is not described in STS.yaml"')
                     continue
-                
+
                 alert = createAlert(self, ind=field, **keyConfig)
                 self.actor.setAlertState(actor=self.name, keyword=keyVar, newState=alert, field=field)
 
