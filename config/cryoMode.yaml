@@ -42,10 +42,10 @@ vis:
       limits: [null, 5.0e-6]
     visTemps[5]:
       <<: *ALERT
-      limits: [null, 164]
+      limits: [161, 165]
     visTemps[6]:
       <<: *ALERT
-      limits: [null, 164]
+      limits: [161, 165]
   warmup:
     null
   bakeout:
