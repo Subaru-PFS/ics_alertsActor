@@ -8,6 +8,8 @@ stsModuleCount = 200                # the number of IDs per SM
 stsCamCount = 60                    # the numbr of IDs per camera
 stsRoughCount = 10                  # the number of IDs per roughing actor.
 stsCamIds = dict(r=0, b=1, n=2)     # the order of the cameras in per-module STS ids.
+actorBase = dict(meb=1096, agcc=2300, peb=2340, pfilamps=2380, fps=2400)
+
 
 def camBase(smNum, arm):
     """Return the STS base radio ID for a given camera
@@ -53,11 +55,6 @@ def roughBase(roughNum):
         raise ValueError('invalid roughing actor number')
 
     return stsSpsBase + 4*stsModuleCount + (roughNum-1)*stsRoughCount
-
-def actorBase(name):
-    if name == 'meb':
-        return 1096
-    return None
 
 def parseAlertsModels(parts, cmd=None):
     """Generate a list of models from the list of parts, and their STS radio ID bases
@@ -107,11 +104,13 @@ def parseAlertsModels(parts, cmd=None):
                 stsModels[modelName] = camBase(smNum=sm, arm=arm)
         else:
             modelName = p
-            idBase = actorBase(modelName)
-            if idBase is None:
+            try:
+                idBase = actorBase[modelName]
+            except KeyError:
                 raise ValueError(f"invalid alerts part: {p}")
+
             stsModels[modelName] = idBase
-            
+
     if cmd is not None:
         cmd.inform(f'text="loading STS models: {stsModels}"')
     return stsModels
