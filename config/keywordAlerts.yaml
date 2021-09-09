@@ -71,7 +71,7 @@ actors:
       alertFmt: 'coolant flow has stopped'
     temps[0]:
       <<: *LIMITS_ALERT
-      limits: [ 10.0, 25.0 ]
+      limits: [ 0.0, 25.0 ]
       alertFmt: 'temperature out of range'
 
   xcu_{cam}: # All XCUs
