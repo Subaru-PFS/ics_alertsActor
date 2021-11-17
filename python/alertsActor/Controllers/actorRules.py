@@ -115,7 +115,7 @@ class STSCallback(object):
             alertState = addIdentification(stsHelp, alertState, doAddIdentifier=self.actor.alertsNeedIdentifier)
 
             stsType, val = self.keyToStsTypeAndValue(stsType, keyVar[keyId], alertState)
-            datum = stsType(stsId, timestamp=now.timestamp(), value=(val, alertState))
+            datum = stsType(stsId, timestamp=int(now.timestamp()), value=(val, alertState))
             doSend = self.stsBuffer.check(datum)
 
             self.logger.info('updating(doSend=%s) STSid %d(%s) from %s.%s[%s] with (%s, %s)',
