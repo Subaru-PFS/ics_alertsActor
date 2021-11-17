@@ -1,7 +1,6 @@
 import logging
 import os
 import re
-import time
 
 import numpy as np
 import yaml
@@ -65,7 +64,7 @@ class STSCallback(object):
         self.actor = actor
         self.logger = logger
 
-        self.now = int(time.time())
+        self.datetime = self.actor.getTime()
         self.stsBuffer = STSBuffer(logger)
 
     def keyToStsTypeAndValue(self, stsType, key, alertState):
@@ -89,21 +88,27 @@ class STSCallback(object):
 
     def __call__(self, keyVar, new=True):
         """ This function is called when new keys are received by the dispatcher. """
-        now = int(time.time())
-        self.now = now if new else self.now
-        uptodate = (now - self.now) < STSCallback.TIMEOUT
+
+        def genTimeoutAlert(identifier, datetime, formatter):
+            return f'NO DATA SINCE {formatter(datetime)}'
+
+        now = self.actor.getTime()
+        self.datetime = now if new else self.datetime
+        uptodate = (now - self.datetime).total_seconds() < STSCallback.TIMEOUT
 
         if not new and uptodate:
             return
 
         for stsMap in self.stsMap:
             keyId, stsHelp, stsId, stsType = stsMap['keyId'], stsMap['stsHelp'], stsMap['stsId'], stsMap['stsType']
-            alertFunc = self.actor.getAlertState if uptodate else self.timeout
 
-            alertState = alertFunc(self.actorName, keyVar, keyId, delta=(now - self.now))
+            if uptodate:
+                alertState = self.actor.getAlertState(self.actorName, keyVar, keyId)
+            else:
+                alertState = genTimeoutAlert(stsHelp, self.datetime, self.actor.getTime.format)
+
             stsType, val = self.keyToStsTypeAndValue(stsType, keyVar[keyId], alertState)
-
-            datum = stsType(stsId, timestamp=now, value=(val, alertState))
+            datum = stsType(stsId, timestamp=now.timestamp(), value=(val, alertState))
             doSend = self.stsBuffer.check(datum)
 
             self.logger.info('updating(doSend=%s) STSid %d(%s) from %s.%s[%s] with (%s, %s)',
@@ -117,9 +122,6 @@ class STSCallback(object):
             stsServer = radio.Radio(host=stsHost)
             stsServer.transmit(toSend)
             self.stsBuffer.clear()
-
-    def timeout(self, actor, key, keyFieldId, delta):
-        return f'{actor} {key.name}[{keyFieldId}] NO DATA since {delta} s'
 
 
 class ActorRules(QThread):
@@ -142,7 +144,7 @@ class ActorRules(QThread):
             self.logger.warn('removing callback: %s', cb)
             keyVar.removeCallback(cb)
             for field in range(len(keyVar)):
-                self.actor.clearAlert(self.name, keyVar, field=field)
+                self.actor.clearAlert(self.name, keyVar, field)
 
         self.exit()
 

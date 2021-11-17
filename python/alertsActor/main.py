@@ -2,10 +2,11 @@
 
 import argparse
 import logging
-import os
 
 from actorcore import ICC
 from alertsActor.utils import sts as stsUtils
+from ics.utils.time import TimeGetter
+
 
 class OurActor(ICC.ICC):
     def __init__(self, name,
@@ -20,6 +21,7 @@ class OurActor(ICC.ICC):
                          productName=productName,
                          configFile=configFile)
 
+        self.getTime = TimeGetter()
         self.everConnected = False
 
         self.logger.setLevel(logLevel)
@@ -48,20 +50,20 @@ class OurActor(ICC.ICC):
 
                 self.callCommand(f'connect controller={model} name={name}')
 
-    def _getAlertKey(self, actor, keyword, field=None):
+    def _getAlertKey(self, actor, keyword, field):
         return (actor, keyword.name, field)
 
-    def getAlertState(self, actor, keyword, field=None, **kwargs):
+    def getAlertState(self, actor, keyword, field):
         alert = self.activeAlerts.get(self._getAlertKey(actor, keyword, field), None)
         return "OK" if alert is None else alert.call(keyword, self.models[actor])
 
-    def setAlertState(self, actor, keyword, newState, field=None):
+    def setAlertState(self, actor, keyword, newState, field):
         if newState is None:
-            self.clearAlert(actor, keyword, field=field)
+            self.clearAlert(actor, keyword, field)
         else:
             self.activeAlerts[self._getAlertKey(actor, keyword, field)] = newState
 
-    def clearAlert(self, actor, keyword, field=None):
+    def clearAlert(self, actor, keyword, field):
         try:
             del self.activeAlerts[self._getAlertKey(actor, keyword, field)]
         except KeyError:
