@@ -33,14 +33,14 @@ class Alert(object):
         value = self.getValue(keyword)
 
         if isinstance(value, types.Invalid):
-            return f'{self.name} {keyword.name}[{self.ind}] : is unknown'
+            return 'value is invalid'
 
         return 'OK'
 
 
 class LimitsAlert(Alert):
-    def __init__(self, actorRules, call, alertFmt, limits, ind=0):
-        Alert.__init__(self, actorRules=actorRules, call=call, alertFmt=alertFmt, ind=ind)
+    def __init__(self, *args, limits, **kwargs):
+        Alert.__init__(self, *args, **kwargs)
         self.limits = limits
 
     def check(self, keyword, model, lowBound=False, upBound=False):
@@ -63,8 +63,8 @@ class LimitsAlert(Alert):
 
 
 class CuAlert(LimitsAlert):
-    def __init__(self, actorRules, call, alertFmt, ind=0):
-        Alert.__init__(self, actorRules=actorRules, call=call, alertFmt=alertFmt, ind=ind)
+    def __init__(self, *args, **kwargs):
+        Alert.__init__(self, *args, **kwargs)
 
     def check(self, keyword, model, lowBound=False, upBound=False):
         mode = self.getValue(model.keyVarDict['cryoMode'])
@@ -79,8 +79,8 @@ class CuAlert(LimitsAlert):
 
 
 class RegexpAlert(Alert):
-    def __init__(self, actorRules, call, alertFmt, pattern, invert, ind=0):
-        Alert.__init__(self, actorRules=actorRules, call=call, alertFmt=alertFmt, ind=ind)
+    def __init__(self, *args, pattern, invert, **kwargs):
+        Alert.__init__(self, *args, **kwargs)
         pattern = r"^OK$" if pattern is None else pattern
         self.pattern = pattern
         self.invert = invert

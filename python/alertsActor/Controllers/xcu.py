@@ -15,10 +15,10 @@ def checkTempRange(cls, keyword, model):
     value = values[cls.ind] if isinstance(values, tuple) else values
 
     if isinstance(value, types.Invalid):
-        return '{key}[{ind}] : is unknown'.format(**dict(key=keyword.name, ind=cls.ind))
+        return 'value is invalid !!'
 
     if not 80 < value < 330:
-        alertState = '{key}[{ind}] : {value}K out of range'.format(**dict(key=keyword.name, ind=cls.ind, value=value))
+        alertState = '{value}K out of range !!'.format(**dict(value=value))
 
     return alertState
 
@@ -47,13 +47,13 @@ def gatevalveState(cls, keyword, model):
     state = cls.getValue(keyword)
 
     if state in ['Invalid', 'Unknown'] and mode not in ['offline', 'standby']:
-        return f'{cls.name} Gatevalve {state} state !!'
+        return f'{state} state !!'
 
     if mode in ['pumpdown', 'bakeout'] and state != 'Open':
-        return f'{cls.name} Gatevalve should be open !!'
+        return f'current:{state}, should be open !!'
 
     if mode in ['cooldown', 'operation'] and state != 'Closed':
-        return f'{cls.name} Gatevalve should be closed !!'
+        return f'current:{state}, should be closed !!'
 
     return "OK"
 
