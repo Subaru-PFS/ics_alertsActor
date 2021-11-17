@@ -22,6 +22,7 @@ class OurActor(ICC.ICC):
                          configFile=configFile)
 
         self.getTime = TimeGetter()
+        self.alertsNeedIdentifier = self.getTime.site != 'S'
         self.everConnected = False
 
         self.logger.setLevel(logLevel)

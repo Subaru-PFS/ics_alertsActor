@@ -89,8 +89,13 @@ class STSCallback(object):
     def __call__(self, keyVar, new=True):
         """ This function is called when new keys are received by the dispatcher. """
 
-        def genTimeoutAlert(identifier, datetime, formatter):
+        def genTimeoutAlert(datetime, formatter):
             return f'NO DATA SINCE {formatter(datetime)}'
+
+        def addIdentification(stsHelp, alertMsg, doAddIdentifier=True):
+            """ add identifier to alert message. """
+            alertMsg = [stsHelp, alertMsg] if doAddIdentifier else [alertMsg]
+            return ' '.join(alertMsg)
 
         now = self.actor.getTime()
         self.datetime = now if new else self.datetime
@@ -105,7 +110,9 @@ class STSCallback(object):
             if uptodate:
                 alertState = self.actor.getAlertState(self.actorName, keyVar, keyId)
             else:
-                alertState = genTimeoutAlert(stsHelp, self.datetime, self.actor.getTime.format)
+                alertState = genTimeoutAlert(self.datetime, self.actor.getTime.format)
+
+            alertState = addIdentification(stsHelp, alertState, doAddIdentifier=self.actor.alertsNeedIdentifier)
 
             stsType, val = self.keyToStsTypeAndValue(stsType, keyVar[keyId], alertState)
             datum = stsType(stsId, timestamp=now.timestamp(), value=(val, alertState))
