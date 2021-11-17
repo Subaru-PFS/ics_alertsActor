@@ -12,10 +12,10 @@ def checkTempRange(cls, keyword, model):
     value = values[cls.ind] if isinstance(values, tuple) else values
 
     if isinstance(value, types.Invalid):
-        return f'{cls.name} {keyword.name}[{cls.ind}] : is unknown'
+        return 'value is invalid !!'
 
     if not 0 <= value <= 30:
-        alertState = f'{cls.name} {keyword.name}[{cls.ind}] : {value}C out of range'
+        alertState = f'{value}C is out of range !!'
 
     return alertState
 

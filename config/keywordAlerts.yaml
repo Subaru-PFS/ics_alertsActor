@@ -68,58 +68,58 @@ actors:
     flow:
       <<: *LIMITS_ALERT
       limits: [ 0.0, null ]
-      alertFmt: 'coolant flow has stopped'
+      alertFmt: 'coolant flow has stopped !!'
     temps[0]:
       <<: *LIMITS_ALERT
       limits: [ 0.0, 25.0 ]
-      alertFmt: 'temperature out of range'
+      alertFmt: 'temperature out of range !!'
 
   xcu_{cam}: # All XCUs
     pcmPower1[2]:
       <<: *LIMITS_ALERT
       limits: [ 27.0, null ]
-      alertFmt: '{name} 24V-UPS Input power is failing!!: {value}V'
+      alertFmt: '24V-UPS Input power is failing: {value}V !!'
     pcmPower2[2]:
       <<: *LIMITS_ALERT
       limits: [ 24.0, null ]
-      alertFmt: '{name} 24V-AUX Input power is failing!!: {value}V'
+      alertFmt: '24V-AUX Input power is failing: {value}V !!'
     ionpump1Errors[2]:
       <<: *REGEXP_ALERT
-      alertFmt: '{name} ionPump1 : {value} !!'
+      alertFmt: 'ERROR: {value} !!'
     ionpump2Errors[2]:
       <<: *REGEXP_ALERT
-      alertFmt: '{name} ionPump2 : {value} !!'
+      alertFmt: 'ERROR: {value} !!'
     coolerStatus[2]:
       <<: *REGEXP_ALERT
-      alertFmt: '{name} COOLER : {value} !!'
+      alertFmt: 'ERROR: {value} !!'
     pressure:
       <<: *VISCU_ALERT
-      alertFmt: '{name} pressure is too high : {value}Torr !!'
+      alertFmt: 'pressure is too high: {value}Torr !!'
     turboSpeed:
       <<: *VISCU_ALERT
-      alertFmt: '{name} turbo speed is too low : {value}RPM !!'
+      alertFmt: 'speed is too low: {value}RPM !!'
     coolerTemps[1]:
       <<: *VISCU_ALERT
-      alertFmt: '{name} Cooler reject is too high : {value}C !!'
+      alertFmt: 'reject temperature is too high: {value}C !!'
     coolerTemps[3]:
       <<: *ALERT
       call: xcu.coolerPower
-      alertFmt: '{name} Cooler power is out of range : {value}W !!'
+      alertFmt: 'power is out of range: {value}W !!'
     visTemps[5]:
       <<: *VISCU_ALERT
-      alertFmt: '{name} Detector strap 1 temperature is too high : {value}K !!'
+      alertFmt: 'temperature is too high: {value}K !!'
     visTemps[6]:
       <<: *VISCU_ALERT
-      alertFmt: '{name} Detector strap 2 temperature is too high : {value}K !!'
+      alertFmt: 'temperature is too high: {value}K !!'
 
     ionpump1[0]:
       <<: *ALERT
       call: xcu.ionpumpState
-      alertFmt: '{name} ionpump1 should be on !!'
+      alertFmt: 'ionpump1 should be on !!'
     ionpump2[0]:
       <<: *ALERT
       call: xcu.ionpumpState
-      alertFmt: '{name} ionpump2 should be on !!'
+      alertFmt: 'ionpump2 should be on !!'
     gatevalve[1]:
       <<: *ALERT
       call: xcu.gatevalveState
@@ -129,7 +129,7 @@ actors:
       <<: *REGEXP_ALERT
       pattern: ^FAILED$
       invert: True
-      alertFmt: '{name} bia-shutter board is in failed state !!'
+      alertFmt: 'arduino board is in failed state !!'
 
   tests:
     keytest1:
@@ -138,10 +138,10 @@ actors:
     keytest2:
       <<: *LIMITS_ALERT
       limits: [ null, 1.0e-06 ]
-      alertFmt: 'keytest3 is too high!!: {value}'
+      alertFmt: 'keytest3 is too high: {value} !!'
     keytest3[1]:
       <<: *REGEXP_ALERT
-      alertFmt: 'test regexp : {value} !!'
+      alertFmt: 'test regexp: {value} !!'
 
 
 
