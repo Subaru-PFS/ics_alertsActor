@@ -57,7 +57,7 @@ class LimitsAlert(Alert):
         value = self.getValue(keyword)
 
         if not lowBound <= value <= upBound:
-            alertState = self.alertFmt.format(**dict(name=self.name, value=value))
+            alertState = self.alertFmt.format(**dict(value=value))
 
         return alertState
 
@@ -95,7 +95,27 @@ class RegexpAlert(Alert):
         alert = not alert if self.invert else alert
 
         if alert:
-            alertState = self.alertFmt.format(**dict(name=self.name, value=value))
+            alertState = self.alertFmt.format(**dict(value=value))
+
+        return alertState
+
+
+class BoolAlert(Alert):
+    def __init__(self, *args, invert, **kwargs):
+        Alert.__init__(self, *args, **kwargs)
+        self.invert = invert
+
+    def check(self, keyword, model):
+        alertState = Alert.check(self, keyword=keyword, model=model)
+        if alertState != 'OK':
+            return alertState
+
+        value = bool(self.getValue(keyword))
+
+        alert = not value if self.invert else value
+
+        if alert:
+            alertState = self.alertFmt.format(**dict(value=value))
 
         return alertState
 
@@ -107,6 +127,8 @@ def createAlert(actorRules, alertType, **kwargs):
         return LimitsAlert(actorRules, **kwargs)
     elif alertType == 'regexp':
         return RegexpAlert(actorRules, **kwargs)
+    elif alertType == 'boolean':
+        return BoolAlert(actorRules, **kwargs)
     elif alertType in ['viscu', 'nircu']:
         return CuAlert(actorRules, **kwargs)
     else:

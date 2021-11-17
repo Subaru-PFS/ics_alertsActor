@@ -36,6 +36,11 @@ _regexpAlert: &REGEXP_ALERT
   pattern: null
   invert: False
 
+_boolAlert: &BOOLEAN_ALERT
+  <<: *ALERT
+  alertType: boolean
+  invert: False
+
 _viscuAlert: &VISCU_ALERT
   <<: *ALERT
   alertType: viscu
@@ -73,6 +78,12 @@ actors:
       <<: *LIMITS_ALERT
       limits: [ 0.0, 25.0 ]
       alertFmt: 'temperature out of range !!'
+
+  peb: # PFI E-Box
+    leakage[0]:
+      <<: *BOOLEAN_ALERT
+      invert: True
+      alertFmt: 'there is a leak !!'
 
   xcu_{cam}: # All XCUs
     pcmPower1[2]:
