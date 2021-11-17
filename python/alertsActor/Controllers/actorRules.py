@@ -87,7 +87,7 @@ class STSCallback(object):
         else:
             raise TypeError(f'do not know how to convert a {stsType}')
 
-    def __call__(self, key, new=True):
+    def __call__(self, keyVar, new=True):
         """ This function is called when new keys are received by the dispatcher. """
         now = int(time.time())
         self.now = now if new else self.now
@@ -100,14 +100,14 @@ class STSCallback(object):
             keyId, stsHelp, stsId, stsType = stsMap['keyId'], stsMap['stsHelp'], stsMap['stsId'], stsMap['stsType']
             alertFunc = self.actor.getAlertState if uptodate else self.timeout
 
-            alertState = alertFunc(self.actorName, key, keyId, delta=(now - self.now))
-            stsType, val = self.keyToStsTypeAndValue(stsType, key[keyId], alertState)
+            alertState = alertFunc(self.actorName, keyVar, keyId, delta=(now - self.now))
+            stsType, val = self.keyToStsTypeAndValue(stsType, keyVar[keyId], alertState)
 
             datum = stsType(stsId, timestamp=now, value=(val, alertState))
             doSend = self.stsBuffer.check(datum)
 
             self.logger.info('updating(doSend=%s) STSid %d(%s) from %s.%s[%s] with (%s, %s)',
-                             doSend, stsId, stsType.__name__, key.actor, key.name, keyId, val, alertState)
+                             doSend, stsId, stsType.__name__, keyVar.actor, keyVar.name, keyId, val, alertState)
             self.stsBuffer.append(datum)
 
         toSend = self.stsBuffer.filterTraffic()
