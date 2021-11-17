@@ -70,6 +70,151 @@ actors:
       stsId: 1102
       stsType: FLOAT+TEXT
       units: degC
+  peb:
+    flow:
+    - keyId: 0
+      stsHelp: 'PFS: PEB Coolant Flow rate'
+      stsId: 2343
+      stsType: FLOAT+TEXT
+      units: Gal/min
+    - keyId: 1
+      stsHelp: 'PFS: PEB Flowmeter rotor speed'
+      stsId: 2344
+      stsType: FLOAT+TEXT
+      units: Hz
+    humidity:
+    - keyId: 0
+      stsHelp: 'PFS: PEB E-box Humidity'
+      stsId: 2340
+      stsType: FLOAT+TEXT
+      units: '%'
+    - keyId: 1
+      stsHelp: 'PFS: PEB E-box Coolant temperature'
+      stsId: 2341
+      stsType: FLOAT+TEXT
+      units: degC
+    - keyId: 2
+      stsHelp: 'PFS: PEB E-box Dew point'
+      stsId: 2342
+      stsType: FLOAT+TEXT
+      units: degC
+    leakage:
+    - keyId: 0
+      stsHelp: 'PFS: PEB No Leakage indicator'
+      stsId: 2345
+      stsType: INTEGER+TEXT
+      units: bool
+    - keyId: 1
+      stsHelp: 'PFS: PEB Leakage sensor connected'
+      stsId: 2346
+      stsType: INTEGER+TEXT
+      units: bool
+    temps:
+    - keyId: 0
+      stsHelp: 'PFS: PEB AGC-4 Temperature'
+      stsId: 2347
+      stsType: FLOAT+TEXT
+      units: degC
+    - keyId: 1
+      stsHelp: 'PFS: PEB AGC-3 Temperature'
+      stsId: 2348
+      stsType: FLOAT+TEXT
+      units: degC
+    - keyId: 2
+      stsHelp: 'PFS: PEB AGC-2 Temperature'
+      stsId: 2349
+      stsType: FLOAT+TEXT
+      units: degC
+    - keyId: 3
+      stsHelp: 'PFS: PEB AGC-1 Temperature'
+      stsId: 2350
+      stsType: FLOAT+TEXT
+      units: degC
+    - keyId: 4
+      stsHelp: 'PFS: PEB AGC-6 Temperature'
+      stsId: 2351
+      stsType: FLOAT+TEXT
+      units: degC
+    - keyId: 5
+      stsHelp: 'PFS: PEB AGC-5 Temperature'
+      stsId: 2352
+      stsType: FLOAT+TEXT
+      units: degC
+    - keyId: 6
+      stsHelp: 'PFS: PEB UL link 1 Temperature'
+      stsId: 2353
+      stsType: FLOAT+TEXT
+      units: degC
+    - keyId: 7
+      stsHelp: 'PFS: PEB UL link 2 Temperature'
+      stsId: 2354
+      stsType: FLOAT+TEXT
+      units: degC
+    - keyId: 8
+      stsHelp: 'PFS: PEB UL link 3 Temperature'
+      stsId: 2355
+      stsType: FLOAT+TEXT
+      units: degC
+    - keyId: 9
+      stsHelp: 'PFS: PEB positioner frame'
+      stsId: 2356
+      stsType: FLOAT+TEXT
+      units: degC
+    - keyId: 10
+      stsHelp: 'PFS: PEB COB1 Temperature'
+      stsId: 2357
+      stsType: FLOAT+TEXT
+      units: degC
+    - keyId: 11
+      stsHelp: 'PFS: PEB COB2 Temperature'
+      stsId: 2358
+      stsType: FLOAT+TEXT
+      units: degC
+    - keyId: 12
+      stsHelp: 'PFS: PEB COB3 Temperature'
+      stsId: 2359
+      stsType: FLOAT+TEXT
+      units: degC
+    - keyId: 13
+      stsHelp: 'PFS: PEB COB4 Temperature'
+      stsId: 2360
+      stsType: FLOAT+TEXT
+      units: degC
+    - keyId: 14
+      stsHelp: 'PFS: PEB COB5 Temperature'
+      stsId: 2361
+      stsType: FLOAT+TEXT
+      units: degC
+    - keyId: 15
+      stsHelp: 'PFS: PEB COB6 Temperature'
+      stsId: 2362
+      stsType: FLOAT+TEXT
+      units: degC
+    - keyId: 16
+      stsHelp: 'PFS: PEB EBOX1 Temperature'
+      stsId: 2363
+      stsType: FLOAT+TEXT
+      units: degC
+    - keyId: 17
+      stsHelp: 'PFS: PEB EBOX2 Temperature'
+      stsId: 2364
+      stsType: FLOAT+TEXT
+      units: degC
+    - keyId: 18
+      stsHelp: 'PFS: PEB EBOX3 Temperature'
+      stsId: 2365
+      stsType: FLOAT+TEXT
+      units: degC
+    - keyId: 19
+      stsHelp: 'PFS: PEB Input coolant Temperature'
+      stsId: 2366
+      stsType: FLOAT+TEXT
+      units: degC
+    - keyId: 20
+      stsHelp: 'PFS: PEB Output coolant Temperature'
+      stsId: 2367
+      stsType: FLOAT+TEXT
+      units: degC
   rough1:
     pressure:
     - keyId: 0
