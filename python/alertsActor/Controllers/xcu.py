@@ -10,6 +10,7 @@ reload(actorRules)
 
 
 def checkTempRange(cls, keyword, model):
+    """ not actually used, but keep it as an example."""
     alertState = "OK"
     values = keyword.getValue(doRaise=False)
     value = values[cls.ind] if isinstance(values, tuple) else values
@@ -37,7 +38,7 @@ def ionpumpState(cls, keyword, model):
     state = cls.getValue(keyword)
 
     if mode in ['cooldown', 'operation'] and not state:
-        return cls.alertFmt.format(**dict(name=cls.name, value=state))
+        return cls.alertFmt.format(**dict(mode=mode, state=state))
 
     return "OK"
 

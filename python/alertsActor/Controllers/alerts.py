@@ -57,7 +57,7 @@ class LimitsAlert(Alert):
         value = self.getValue(keyword)
 
         if not lowBound <= value <= upBound:
-            alertState = self.alertFmt.format(**dict(value=value))
+            alertState = self.alertFmt.format(**dict(value=value, lowerLimit=lowBound, upperLimit=upBound))
 
         return alertState
 
