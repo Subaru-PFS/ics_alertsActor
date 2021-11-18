@@ -96,13 +96,13 @@ actors:
       alertFmt: '24V-AUX Input power is failing: {value}V !!'
     ionpump1Errors[2]:
       <<: *REGEXP_ALERT
-      alertFmt: 'ERROR: {value} !!'
+      alertFmt: '{value} !!'
     ionpump2Errors[2]:
       <<: *REGEXP_ALERT
-      alertFmt: 'ERROR: {value} !!'
+      alertFmt: '{value} !!'
     coolerStatus[2]:
       <<: *REGEXP_ALERT
-      alertFmt: 'ERROR: {value} !!'
+      alertFmt: '{value} !!'
     pressure:
       <<: *VISCU_ALERT
       alertFmt: 'is too high: {value}Torr !!'
