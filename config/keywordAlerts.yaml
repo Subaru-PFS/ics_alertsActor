@@ -85,6 +85,32 @@ actors:
       invert: True
       alertFmt: 'there is a leak !!'
 
+    temps[0]:
+      <<: *LIMITS_ALERT
+        limits: [null, 25]
+        alertFmt: 'is too high: {value}C !!'
+    temps[1]:
+      <<: *LIMITS_ALERT
+        limits: [ null, 25 ]
+        alertFmt: 'is too high: {value}C !!'
+    temps[2]:
+      <<: *LIMITS_ALERT
+        limits: [ null, 25 ]
+        alertFmt: 'is too high: {value}C !!'
+    temps[3]:
+      <<: *LIMITS_ALERT
+        limits: [ null, 25 ]
+        alertFmt: 'is too high: {value}C !!'
+    temps[4]:
+      <<: *LIMITS_ALERT
+        limits: [ null, 25 ]
+        alertFmt: 'is too high: {value}C !!'
+    temps[5]:
+      <<: *LIMITS_ALERT
+        limits: [ null, 25 ]
+        alertFmt: 'is too high: {value}C !!'
+
+
   xcu_{cam}: # All XCUs
     pcmPower1[2]:
       <<: *LIMITS_ALERT
