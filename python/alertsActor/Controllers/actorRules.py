@@ -2,6 +2,7 @@ import logging
 import os
 import re
 
+import ics.utils.time as pfsTime
 import numpy as np
 import yaml
 from STSpy.STSpy import radio, datum
@@ -64,7 +65,7 @@ class STSCallback(object):
         self.actor = actor
         self.logger = logger
 
-        self.datetime = self.actor.getTime()
+        self.datetime = pfsTime.datetime.now()
         self.stsBuffer = STSBuffer(logger)
 
     def keyToStsTypeAndValue(self, stsType, key, alertState):
@@ -89,15 +90,15 @@ class STSCallback(object):
     def __call__(self, keyVar, new=True):
         """ This function is called when new keys are received by the dispatcher. """
 
-        def genTimeoutAlert(datetime, formatter):
-            return f'NO DATA SINCE {formatter(datetime)}'
+        def genTimeoutAlert(datetime):
+            return f'NO DATA SINCE {datetime.tzformat()}'
 
         def addIdentification(stsHelp, alertMsg, doAddIdentifier=True):
             """ add identifier to alert message. """
             alertMsg = [stsHelp, alertMsg] if doAddIdentifier else [alertMsg]
             return ' '.join(alertMsg)
 
-        now = self.actor.getTime()
+        now = pfsTime.datetime.now()
         self.datetime = now if new else self.datetime
         uptodate = (now - self.datetime).total_seconds() < STSCallback.TIMEOUT
 
@@ -110,7 +111,7 @@ class STSCallback(object):
             if uptodate:
                 alertState = self.actor.getAlertState(self.actorName, keyVar, keyId)
             else:
-                alertState = genTimeoutAlert(self.datetime, self.actor.getTime.format)
+                alertState = genTimeoutAlert(self.datetime)
 
             alertState = addIdentification(stsHelp, alertState, doAddIdentifier=self.actor.alertsNeedIdentifier)
 
@@ -133,7 +134,7 @@ class STSCallback(object):
 
 class ActorRules(QThread):
     def __init__(self, actor, name):
-        QThread.__init__(self, actor, name, timeout=60)
+        QThread.__init__(self, actor, name, timeout=15)
         self.logger = logging.getLogger(f'alerts_{name}')
         self.cbs = []
 
