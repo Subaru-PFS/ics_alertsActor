@@ -65,7 +65,7 @@ class STSCallback(object):
         self.actor = actor
         self.logger = logger
 
-        self.datetime = pfsTime.datetime.now()
+        self.timestamp = pfsTime.timestamp()
         self.stsBuffer = STSBuffer(logger)
 
     def keyToStsTypeAndValue(self, stsType, key, alertState):
@@ -90,17 +90,17 @@ class STSCallback(object):
     def __call__(self, keyVar, new=True):
         """ This function is called when new keys are received by the dispatcher. """
 
-        def genTimeoutAlert(datetime):
-            return f'NO DATA SINCE {datetime.tzformat()}'
+        def genTimeoutAlert(timestamp):
+            return f'NO DATA SINCE {pfsTime.Time.fromtimestamp(timestamp).isoformat(microsecond=False)}'
 
         def addIdentification(stsHelp, alertMsg, doAddIdentifier=True):
             """ add identifier to alert message. """
             alertMsg = [stsHelp, alertMsg] if doAddIdentifier else [alertMsg]
             return ' '.join(alertMsg)
 
-        now = pfsTime.datetime.now()
-        self.datetime = now if new else self.datetime
-        uptodate = (now - self.datetime).total_seconds() < STSCallback.TIMEOUT
+        now = pfsTime.timestamp()
+        self.timestamp = now if new else self.timestamp
+        uptodate = now - self.timestamp < STSCallback.TIMEOUT
 
         if not new and uptodate:
             return
@@ -111,12 +111,12 @@ class STSCallback(object):
             if uptodate:
                 alertState = self.actor.getAlertState(self.actorName, keyVar, keyId)
             else:
-                alertState = genTimeoutAlert(self.datetime)
+                alertState = genTimeoutAlert(self.timestamp)
 
             alertState = addIdentification(stsHelp, alertState, doAddIdentifier=self.actor.alertsNeedIdentifier)
 
             stsType, val = self.keyToStsTypeAndValue(stsType, keyVar[keyId], alertState)
-            datum = stsType(stsId, timestamp=int(now.timestamp()), value=(val, alertState))
+            datum = stsType(stsId, timestamp=int(now), value=(val, alertState))
             doSend = self.stsBuffer.check(datum)
 
             self.logger.info('updating(doSend=%s) STSid %d(%s) from %s.%s[%s] with (%s, %s)',
