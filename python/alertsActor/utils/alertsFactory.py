@@ -9,11 +9,13 @@ from opscore.protocols import types
 class Alert(object):
     def __init__(self, actorRules, call, alertFmt, fieldId=0, **kwargs):
         self.actorRules = actorRules
+        # just call regular check
         if isinstance(call, bool):
             self.call = self.check
+        # dynamically load python routine from module.
         else:
             modname, funcname = call.split('.')
-            module = importlib.import_module(modname)
+            module = importlib.import_module(f'alertsActor.Controllers.{modname}')
             self.call = partial(getattr(module, funcname), self)
 
         self.alertFmt = alertFmt
@@ -62,16 +64,16 @@ class LimitsAlert(Alert):
         return alertState
 
 
-class CuAlert(LimitsAlert):
+class CryoModeAlert(LimitsAlert):
     def __init__(self, *args, **kwargs):
         Alert.__init__(self, *args, **kwargs)
 
     def check(self, keyVar, model, lowBound=False, upBound=False):
         mode = self.getValue(model.keyVarDict['cryoMode'])
-        conf = self.actorRules.loadCryoMode(mode=mode)
+        cryoRules = self.actorRules.loadCryoMode(mode=mode)
 
         try:
-            lowBound, upBound = conf[f'{keyVar.name}[{self.fieldId}]']['limits']
+            lowBound, upBound = cryoRules[f'{keyVar.name}[{self.fieldId}]']['limits']
         except KeyError:
             lowBound, upBound = None, None
 
@@ -120,7 +122,7 @@ class BoolAlert(Alert):
         return alertState
 
 
-def factory(actorRules, alertType, **kwargs):
+def build(actorRules, alertType, **kwargs):
     if alertType == 'trigger':
         return Alert(actorRules, **kwargs)
     elif alertType == 'limits':
@@ -129,7 +131,7 @@ def factory(actorRules, alertType, **kwargs):
         return RegexpAlert(actorRules, **kwargs)
     elif alertType == 'boolean':
         return BoolAlert(actorRules, **kwargs)
-    elif alertType in ['viscu', 'nircu']:
-        return CuAlert(actorRules, **kwargs)
+    elif alertType == 'cryomode':
+        return CryoModeAlert(actorRules, **kwargs)
     else:
         raise KeyError('unknown alertType')

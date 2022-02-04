@@ -1,9 +1,8 @@
-import os
 from importlib import reload
 
 import alertsActor.Controllers.actorRules as actorRules
-import yaml
-from alertsActor.Controllers.alerts import CuAlert
+import pfs.instdata.io as fileIO
+from alertsActor.utils.alertsFactory import CryoModeAlert
 from opscore.protocols import types
 
 reload(actorRules)
@@ -26,7 +25,7 @@ def checkTempRange(cls, keyVar, model):
 
 def coolerPower(cls, keyVar, model):
     mode = cls.getValue(model.keyVarDict['cryoMode'])
-    alertState = CuAlert.check(cls, keyVar, model)
+    alertState = CryoModeAlert.check(cls, keyVar, model)
     if mode == 'standby':
         return 'OK'
 
@@ -60,16 +59,8 @@ def gatevalveState(cls, keyVar, model):
 
 
 class xcu(actorRules.ActorRules):
-    def __init__(self, actor, name):
-        actorRules.ActorRules.__init__(self, actor, name)
-
-    def loadAlertConfiguration(self):
-        return actorRules.ActorRules.loadAlertConfiguration(self, actorName='xcu_{cam}')
+    """ basic rules, just add handler from cryoMode"""
 
     def loadCryoMode(self, mode):
-        camType = 'nir' if 'xcu_n' in self.name else 'vis'
-        with open(os.path.expandvars(f'$ICS_ALERTSACTOR_DIR/config/cryoMode.yaml'), 'r') as cfgFile:
-            cfg = yaml.load(cfgFile, Loader=yaml.FullLoader)
-
-        conf = cfg[camType][mode]
-        return conf if conf is not None else {}
+        cfg = fileIO.loadConfig('cryoMode.yaml', subDirectory='alerts')
+        return cfg[self.name][mode]
