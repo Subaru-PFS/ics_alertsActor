@@ -32,6 +32,10 @@ class OurActor(ICC.ICC):
         parts = [part.strip() for part in self.config.get('alerts', 'parts').split(',')]
         self.stsPrimaryIds = stsUtils.parseAlertsModels(parts, cmd=self.bcast)
 
+    @property
+    def stsHost(self):
+        return self.config.get('sts', 'host').strip()
+
     def connectionMade(self):
         if self.everConnected is False:
             self.everConnected = True
@@ -53,35 +57,82 @@ class OurActor(ICC.ICC):
 
                 self.callCommand(f'connect controller={model} name={name}')
 
-    def _getAlertKey(self, actor, keyword, field):
-        return (actor, keyword.name, field)
+    def _getUniqueAlertKey(self, actorName, keyVar, fieldId):
+        """Return unique alert meta-key.
 
-    def getAlertState(self, actor, keyword, field):
-        alert = self.activeAlerts.get(self._getAlertKey(actor, keyword, field), None)
-        return "OK" if alert is None else alert.call(keyword, self.models[actor])
+        Parameters
+        ----------
+        actorName : `str`
+           Actor name.
+        keyVar : `actorcore.actor.opscore.keyvar.KeyVar`
+           Fresh keyvar.
+        fieldId : `int`
+           Field index.
 
-    def setAlertState(self, actor, keyword, newState, field):
-        if newState is None:
-            self.clearAlert(actor, keyword, field)
-        else:
-            self.activeAlerts[self._getAlertKey(actor, keyword, field)] = newState
+        Returns
+        -------
+        actorName, keyName, fieldId : `str`, str`, `int`
+        """
+        return actorName, keyVar.name, fieldId
 
-    def clearAlert(self, actor, keyword, field):
-        try:
-            del self.activeAlerts[self._getAlertKey(actor, keyword, field)]
-        except KeyError:
-            pass
+    def getAlertState(self, actorName, keyVar, fieldId):
+        """ Get current alert state.
 
+        Parameters
+        ----------
+        actorName : `str`
+           Actor name.
+        keyVar : `actorcore.actor.opscore.keyvar.KeyVar`
+           Fresh keyvar.
+        fieldId : `int`
+           field index.
 
-def addKeywordCallback(model, key, function, errorCmd):
-    #
-    # Register our new callback
-    #
-    model.keyVarDict[key].addCallback(function, callNow=False)
+        Returns
+        -------
+        alertState : `str`
+           alert message to transmit to STS
+        """
+        metaKey = self._getUniqueAlertKey(actorName, keyVar, fieldId)
+        # no alert set on this key.
+        if metaKey not in self.activeAlerts:
+            return "OK"
+        # call alert function providing keyVar and model.
+        return self.activeAlerts[metaKey].call(keyVar, self.models[actorName])
 
+    def assignAlert(self, actorName, keyVar, fieldId, alertObj):
+        """ assign an alert object to our active alerts dictionary.
 
-#
-# To work
+        Parameters
+        ----------
+        actorName : `str`
+           Actor name.
+        keyVar : `actorcore.actor.opscore.keyvar.KeyVar`
+           Fresh keyvar.
+        fieldId : `int`
+           field index.
+        alertObj : `alertsActor.Controllers.alert`
+           alert object from the factory.
+        """
+        metaKey = self._getUniqueAlertKey(actorName, keyVar, fieldId)
+        self.activeAlerts[metaKey] = alertObj
+
+    def clearAlert(self, actorName, keyVar, fieldId):
+        """ clear an existing alert.
+
+        Parameters
+        ----------
+        actorName : `str`
+           Actor name.
+        keyVar : `actorcore.actor.opscore.keyvar.KeyVar`
+           Fresh keyvar.
+        fieldId : `int`
+           field index.
+        """
+        metaKey = self._getUniqueAlertKey(actorName, keyVar, fieldId)
+
+        if metaKey in self.activeAlerts:
+            logging.warning(f'deleting alertObj id=0x%08x from %s' % (id(self.activeAlerts[metaKey]), metaKey))
+
 
 def main():
     parser = argparse.ArgumentParser()

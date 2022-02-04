@@ -6,10 +6,10 @@ from opscore.protocols import types
 reload(actorRules)
 
 
-def checkTempRange(cls, keyword, model):
+def checkTempRange(cls, keyVar, model):
     alertState = "OK"
-    values = keyword.getValue(doRaise=False)
-    value = values[cls.ind] if isinstance(values, tuple) else values
+    values = keyVar.getValue(doRaise=False)
+    value = values[cls.fieldId] if isinstance(values, tuple) else values
 
     if isinstance(value, types.Invalid):
         return 'value is invalid !!'
@@ -24,5 +24,5 @@ class enu(actorRules.ActorRules):
     def __init__(self, actor, name):
         actorRules.ActorRules.__init__(self, actor, name)
 
-    def getAlertConfig(self, name='enu_{smId}'):
-        return actorRules.ActorRules.getAlertConfig(self, name=name)
+    def loadAlertConfiguration(self):
+        return actorRules.ActorRules.loadAlertConfiguration(self, actorName='enu_{smId}')

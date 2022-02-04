@@ -2,235 +2,150 @@ import logging
 import os
 import re
 
-import ics.utils.time as pfsTime
-import numpy as np
+import alertsActor.Controllers.alerts as alerts
+import alertsActor.utils.stsCallback as stsCB
 import yaml
-from STSpy.STSpy import radio, datum
 from actorcore.QThread import QThread
-from alertsActor.Controllers.alerts import createAlert
 
 
-def getFields(keyName):
-    m = re.search("\[([0-9_]+)\]", keyName)
+def findFieldId(keyName):
+    """ find fieldId from keyName
 
-    if m is not None:
-        keyName, m = keyName[:m.span(0)[0]].strip(), [int(m.group(1))]
+    Parameters
+    ----------
+    keyName : `str`
+       keyword name .
 
-    return keyName, m
+    Returns
+    -------
+    keyName : `str`
+       keyName with fieldId stripped.
+    fieldId :  `int`
+       keyword fieldId 
+    """
+    fieldId = re.search("\[([0-9_]+)\]", keyName)
 
+    if fieldId is None:
+        # no fieldId assigned
+        return keyName, None
 
-class STSBuffer(list):
-    samplingTime = 300
+    keyNameStripped = keyName[:fieldId.span(0)[0]].strip()
+    fieldId = int(fieldId.group(1))
 
-    def __init__(self, logger):
-        list.__init__(self)
-        self.logger = logger
-        self.sent = dict()
-
-    def filterTraffic(self):
-        return [datum for datum in self.__iter__() if self.doSend(datum)]
-
-    def check(self, datum):
-        try:
-            prev = self.sent[datum.id]
-        except KeyError:
-            return True
-
-        if (datum.timestamp - prev.timestamp) > STSBuffer.samplingTime:
-            return True
-
-        prevValue, prevState = prev.value
-        currValue, currState = datum.value
-
-        if (currState != 'OK' and prevState == 'OK') or (currState == 'OK' and prevState != 'OK'):
-            return True
-
-        return False
-
-    def doSend(self, datum):
-        doSend = self.check(datum)
-        if doSend:
-            self.sent[datum.id] = datum
-        else:
-            self.logger.debug(f'not forwarded to STS : {datum}')
-        return doSend
-
-
-class STSCallback(object):
-    TIMEOUT = 600
-
-    def __init__(self, actorName, stsMap, actor, logger):
-        self.actorName = actorName
-        self.stsMap = stsMap
-        self.actor = actor
-        self.logger = logger
-
-        self.timestamp = pfsTime.timestamp()
-        self.stsBuffer = STSBuffer(logger)
-
-    def keyToStsTypeAndValue(self, stsType, key, alertState):
-        """ Return the STS type for theActor given key. """
-        if stsType == 'FLOAT+TEXT':
-            stsType = datum.Datum.FloatWithText
-            val = float(key) if isinstance(key, float) else np.nan
-            return stsType, val
-
-        elif stsType == 'INTEGER+TEXT':
-            stsType = datum.Datum.IntegerWithText
-            if isinstance(key, int):
-                val = int(key)
-            elif isinstance(key, str):
-                val = 1 if alertState != 'OK' else 0
-            else:
-                val = -9999
-            return stsType, val
-        else:
-            raise TypeError(f'do not know how to convert a {stsType}')
-
-    def __call__(self, keyVar, new=True):
-        """ This function is called when new keys are received by the dispatcher. """
-
-        def genTimeoutAlert(timestamp):
-            return f'NO DATA SINCE {pfsTime.Time.fromtimestamp(timestamp).isoformat(microsecond=False)}'
-
-        def addIdentification(stsHelp, alertMsg, doAddIdentifier=True):
-            """ add identifier to alert message. """
-            alertMsg = [stsHelp, alertMsg] if doAddIdentifier else [alertMsg]
-            return ' '.join(alertMsg)
-
-        now = pfsTime.timestamp()
-        self.timestamp = now if new else self.timestamp
-        uptodate = now - self.timestamp < STSCallback.TIMEOUT
-
-        if not new and uptodate:
-            return
-
-        for stsMap in self.stsMap:
-            keyId, stsHelp, stsId, stsType = stsMap['keyId'], stsMap['stsHelp'], stsMap['stsId'], stsMap['stsType']
-
-            if uptodate:
-                alertState = self.actor.getAlertState(self.actorName, keyVar, keyId)
-            else:
-                alertState = genTimeoutAlert(self.timestamp)
-
-            alertState = addIdentification(stsHelp, alertState, doAddIdentifier=self.actor.alertsNeedIdentifier)
-
-            stsType, val = self.keyToStsTypeAndValue(stsType, keyVar[keyId], alertState)
-            datum = stsType(stsId, timestamp=int(now), value=(val, alertState))
-            doSend = self.stsBuffer.check(datum)
-
-            self.logger.info('updating(doSend=%s) STSid %d(%s) from %s.%s[%s] with (%s, %s)',
-                             doSend, stsId, stsType.__name__, keyVar.actor, keyVar.name, keyId, val, alertState)
-            self.stsBuffer.append(datum)
-
-        toSend = self.stsBuffer.filterTraffic()
-        if len(toSend) > 0:
-            stsHost = self.actor.config.get('sts', 'host')
-            self.logger.debug('flushing STS (host=%s), with: %s', stsHost, toSend)
-            stsServer = radio.Radio(host=stsHost)
-            stsServer.transmit(toSend)
-            self.stsBuffer.clear()
+    return keyNameStripped, fieldId
 
 
 class ActorRules(QThread):
+    """ Single thread per actor"""
+
     def __init__(self, actor, name):
         QThread.__init__(self, actor, name, timeout=15)
         self.logger = logging.getLogger(f'alerts_{name}')
         self.cbs = []
 
     def start(self, cmd):
+        """ call by controller.start()"""
+        # make sure actorName is in the models.
         if self.name not in self.actor.models:
             self.actor.addModels([self.name])
 
+        # just connect mhs keyvar callback to update sts fieldIds.
         self.connectSts(cmd)
+        # create and set alerts on top on that.
         self.setAlerts(cmd)
 
         QThread.start(self)
 
     def stop(self, cmd):
+        """ call by controller.stop()"""
+        # remove all STSCallback
         for keyVar, cb in self.cbs:
-            self.logger.warn('removing callback: %s', cb)
+            self.logger.warning('removing callback: %s', cb)
             keyVar.removeCallback(cb)
-            for field in range(len(keyVar)):
-                self.actor.clearAlert(self.name, keyVar, field)
+            # clear assigned alert.
+            for fieldId in range(len(keyVar)):
+                self.actor.clearAlert(self.name, keyVar, fieldId)
 
         self.exit()
 
-    def getConfig(self, file, name=None):
-        """ Load model and config """
+    def loadActorConfig(self, file, actorName=None):
+        """ Load model and config for this actor."""
         with open(os.path.expandvars(f'$ICS_ALERTSACTOR_DIR/config/{file}'), 'r') as cfgFile:
             cfg = yaml.load(cfgFile)
 
         cfgActors = cfg['actors']
-        name = self.name if name is None else name
+        actorName = self.name if actorName is None else actorName
 
-        if name not in cfgActors:
-            raise RuntimeError(f'STS not configured for {name} ')
+        if actorName not in cfgActors:
+            raise RuntimeError(f'STS not configured for {actorName} ')
 
         try:
             model = self.actor.models[self.name].keyVarDict
         except KeyError:
             raise KeyError(f'actor model for {self.name} is not loaded')
 
-        return model, cfgActors[name]
+        return model, cfgActors[actorName]
 
-    def getAlertConfig(self, name=None):
-        """ Load keywordAlerts config """
-        try:
-            ret = self.getConfig('keywordAlerts.yaml', name=name)
-        except RuntimeError:
-            ret = None, []
+    def connectSts(self, cmd):
+        """ Check for keywords or fieldId to forward to STS. """
 
-        return ret
-
-    def setAlerts(self, cmd):
-        """ Create and set Alerts state """
-        model, cfg = self.getAlertConfig()
+        model, cfg = self.loadActorConfig('STS.yaml')
 
         for keyName in cfg:
             keyConfig = cfg[keyName]
-            keyName, fields = getFields(keyName)
             try:
                 keyVar = model[keyName]
             except KeyError:
                 raise KeyError(f'keyvar {keyName} is not in the {self.name} model')
 
-            fields = [i for i in range(len(keyVar))] if fields is None else fields
+            # create a callback per keyword.
+            cb = stsCB.STSCallback(self.name, keyConfig, self.actor, self.logger)
+            self.logger.warning('wiring in %s.%s to %s', self.name, keyName, keyConfig)
+
+            keyVar.addCallback(cb, callNow=False)
+            self.cbs.append((keyVar, cb))
+
+    def loadAlertConfiguration(self, actorName=None):
+        """ Load keywordAlerts config """
+        return self.loadActorConfig('keywordAlerts.yaml', actorName=actorName)
+
+    def setAlerts(self, cmd):
+        """ Create and set Alerts state """
+        try:
+            model, cfg = self.loadAlertConfiguration()
+        except RuntimeError:
+            cmd.warn(f'no alerts configured for {self.name}')
+            return
+
+        for keyName in cfg:
+            keyConfig = cfg[keyName]
+            keyName, fieldId = findFieldId(keyName)
+
+            try:
+                keyVar = model[keyName]
+            except KeyError:
+                raise KeyError(f'keyvar {keyName} is not in the {self.name} model')
+
+            fieldIds = [i for i in range(len(keyVar))] if fieldId is None else [fieldId]
             try:
                 [cb] = [cb for kv, cb in self.cbs if kv == keyVar]
                 stsConfig = dict([(stsKey['keyId'], stsKey) for stsKey in cb.stsMap])
             except ValueError:
                 cmd.warn(f'text="{self.name}: keyvar {keyName} is not described in STS.yaml"')
+                continue
 
-            for field in fields:
-                if field not in stsConfig.keys():
-                    cmd.warn(f'text="{self.name}: keyvar {keyName}[{field}] is not described in STS.yaml"')
+            for fieldId in fieldIds:
+                if fieldId not in stsConfig.keys():
+                    cmd.warn(f'text="{self.name}: keyvar {keyName}[{fieldId}] is not described in STS.yaml"')
                     continue
 
-                alert = createAlert(self, ind=field, **keyConfig)
-                self.actor.setAlertState(actor=self.name, keyword=keyVar, newState=alert, field=field)
-
-    def connectSts(self, cmd):
-        """ Check for keywords or field to forward to STS. """
-
-        model, cfg = self.getConfig('STS.yaml')
-
-        for keyName in cfg:
-            keyConfig = cfg[keyName]
-            try:
-                keyVar = model[keyName]
-            except KeyError:
-                raise KeyError(f'keyvar {keyName} is not in the {self.name} model')
-
-            cb = STSCallback(self.name, keyConfig, self.actor, self.logger)
-            self.logger.warn('wiring in %s.%s to %s', self.name, keyName, keyConfig)
-
-            keyVar.addCallback(cb, callNow=False)
-            self.cbs.append((keyVar, cb))
+                alertObj = alerts.factory(self, fieldId=fieldId, **keyConfig)
+                self.actor.assignAlert(self.name, keyVar, fieldId, alertObj=alertObj)
 
     def handleTimeout(self, cmd=None):
         if self.exitASAP:
             raise SystemExit()
 
+        # check for timeout alerts.
         for keyVar, cb in self.cbs:
             cb(keyVar, new=False)

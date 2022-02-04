@@ -7,7 +7,7 @@ from opscore.protocols import types
 
 
 class Alert(object):
-    def __init__(self, actorRules, call, alertFmt, ind=0, **kwargs):
+    def __init__(self, actorRules, call, alertFmt, fieldId=0, **kwargs):
         self.actorRules = actorRules
         if isinstance(call, bool):
             self.call = self.check
@@ -17,20 +17,20 @@ class Alert(object):
             self.call = partial(getattr(module, funcname), self)
 
         self.alertFmt = alertFmt
-        self.ind = ind
+        self.fieldId = fieldId
 
     @property
     def name(self):
         return self.actorRules.name
 
-    def getValue(self, keyword):
-        values = keyword.getValue(doRaise=False)
-        value = values[self.ind] if isinstance(values, tuple) else values
+    def getValue(self, keyVar):
+        values = keyVar.getValue(doRaise=False)
+        value = values[self.fieldId] if isinstance(values, tuple) else values
 
         return value
 
-    def check(self, keyword, model):
-        value = self.getValue(keyword)
+    def check(self, keyVar, model):
+        value = self.getValue(keyVar)
 
         if isinstance(value, types.Invalid):
             return 'value is invalid'
@@ -43,18 +43,18 @@ class LimitsAlert(Alert):
         Alert.__init__(self, *args, **kwargs)
         self.limits = limits
 
-    def check(self, keyword, model, lowBound=False, upBound=False):
+    def check(self, keyVar, model, lowBound=False, upBound=False):
         lowBound = self.limits[0] if lowBound is False else lowBound
         upBound = self.limits[1] if upBound is False else upBound
 
         lowBound = -np.inf if lowBound is None else lowBound
         upBound = np.inf if upBound is None else upBound
 
-        alertState = Alert.check(self, keyword=keyword, model=model)
+        alertState = Alert.check(self, keyVar=keyVar, model=model)
         if alertState != 'OK':
             return alertState
 
-        value = self.getValue(keyword)
+        value = self.getValue(keyVar)
 
         if not lowBound <= value <= upBound:
             alertState = self.alertFmt.format(**dict(value=value, lowerLimit=lowBound, upperLimit=upBound))
@@ -66,16 +66,16 @@ class CuAlert(LimitsAlert):
     def __init__(self, *args, **kwargs):
         Alert.__init__(self, *args, **kwargs)
 
-    def check(self, keyword, model, lowBound=False, upBound=False):
+    def check(self, keyVar, model, lowBound=False, upBound=False):
         mode = self.getValue(model.keyVarDict['cryoMode'])
         conf = self.actorRules.loadCryoMode(mode=mode)
 
         try:
-            lowBound, upBound = conf[f'{keyword.name}[{self.ind}]']['limits']
+            lowBound, upBound = conf[f'{keyVar.name}[{self.fieldId}]']['limits']
         except KeyError:
             lowBound, upBound = None, None
 
-        return LimitsAlert.check(self, keyword, model, lowBound=lowBound, upBound=upBound)
+        return LimitsAlert.check(self, keyVar, model, lowBound=lowBound, upBound=upBound)
 
 
 class RegexpAlert(Alert):
@@ -85,12 +85,12 @@ class RegexpAlert(Alert):
         self.pattern = pattern
         self.invert = invert
 
-    def check(self, keyword, model):
-        alertState = Alert.check(self, keyword=keyword, model=model)
+    def check(self, keyVar, model):
+        alertState = Alert.check(self, keyVar=keyVar, model=model)
         if alertState != 'OK':
             return alertState
 
-        value = self.getValue(keyword)
+        value = self.getValue(keyVar)
         alert = re.match(self.pattern, value) is None
         alert = not alert if self.invert else alert
 
@@ -105,12 +105,12 @@ class BoolAlert(Alert):
         Alert.__init__(self, *args, **kwargs)
         self.invert = invert
 
-    def check(self, keyword, model):
-        alertState = Alert.check(self, keyword=keyword, model=model)
+    def check(self, keyVar, model):
+        alertState = Alert.check(self, keyVar=keyVar, model=model)
         if alertState != 'OK':
             return alertState
 
-        value = bool(self.getValue(keyword))
+        value = bool(self.getValue(keyVar))
 
         alert = not value if self.invert else value
 
@@ -120,7 +120,7 @@ class BoolAlert(Alert):
         return alertState
 
 
-def createAlert(actorRules, alertType, **kwargs):
+def factory(actorRules, alertType, **kwargs):
     if alertType == 'trigger':
         return Alert(actorRules, **kwargs)
     elif alertType == 'limits':
