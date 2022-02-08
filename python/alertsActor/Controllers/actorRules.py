@@ -75,18 +75,18 @@ class ActorRules(QThread):
     def setAlertsLogic(self, cmd):
         """ load keywordAlerts.yaml, create matching alert object and add them to the active alerts dictionary."""
 
-        def findFieldId(keyName):
+        def findIdentifier(keyName):
             """ find fieldId from keyName if any."""
-            fieldId = re.search("\[([0-9_]+)\]", keyName)
+            betweenBracket = re.search("(?<=\[)[^][]*(?=])", keyName)
 
-            if fieldId is None:
-                # no fieldId assigned
+            if betweenBracket is None:
+                # no identifier assigned
                 return keyName, None
 
-            keyNameStripped = keyName[:fieldId.span(0)[0]].strip()
-            fieldId = int(fieldId.group(1))
+            keyNameStripped = keyName[:betweenBracket.span(0)[0] - 1].strip()
+            identifier = betweenBracket.group(0).strip()
 
-            return keyNameStripped, fieldId
+            return keyNameStripped, identifier
 
         # load keywordsAlerts from instdata.config
         cfg = fileIO.loadConfig('keywordAlerts', subDirectory='alerts')
@@ -99,29 +99,34 @@ class ActorRules(QThread):
         alertCfg = cfgActors[self.name]
 
         for keyName, keyConfig in alertCfg.items():
-            keyName, fieldId = findFieldId(keyName)
+            keyName, identifier = findIdentifier(keyName)
 
             try:
                 keyVar = self.model[keyName]
             except KeyError:
                 raise KeyError(f'keyvar {keyName} is not in the {self.name} model')
 
-            fieldIds = [i for i in range(len(keyVar))] if fieldId is None else [fieldId]
+            identifiers = map(str, list(range(len(keyVar)))) if identifier is None else [identifier]
+
             try:
                 [cb] = [cb for kv, cb in self.cbs if kv == keyVar]
-                stsConfig = dict([(stsKey['keyId'], stsKey) for stsKey in cb.stsMap])
+                # identify stsMap both by keyId and keyName.
+                stsConfig = dict([(str(stsKey['keyId']), stsKey) for stsKey in cb.stsMap])
+                perName = dict([(stsKey['keyName'], stsKey) for stsKey in cb.stsMap if stsKey['keyName'] is not None])
+                stsConfig.update(perName)
             except ValueError:
                 cmd.warn(f'text="{self.name}: keyvar {keyName} is not described in STS.yaml"')
                 continue
 
-            for fieldId in fieldIds:
-                if fieldId not in stsConfig.keys():
-                    cmd.warn(f'text="{self.name}: keyvar {keyName}[{fieldId}] is not described in STS.yaml"')
+            for identifier in identifiers:
+                if identifier not in stsConfig.keys():
+                    cmd.warn(f'text="{self.name}: keyvar {keyName}[{identifier}] is not described in STS.yaml"')
                     continue
 
+                stsMap = stsConfig[identifier]
                 # creating alert object and assign it to the active alerts dictionary.
-                alertObj = alertsFactory.build(self, fieldId=fieldId, **keyConfig)
-                self.actor.assignAlert(self.name, keyVar, fieldId, alertObj=alertObj)
+                alertObj = alertsFactory.build(self, fieldId=stsMap['keyId'], **keyConfig)
+                self.actor.assignAlert(self.name, keyVar, stsMap['keyId'], alertObj=alertObj)
 
     def handleTimeout(self, cmd=None):
         if self.exitASAP:

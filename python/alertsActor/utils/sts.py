@@ -1,13 +1,13 @@
-from importlib import reload
 import re
+from importlib import reload
 
 import opscore.protocols.types as types
 
-stsSpsBase = 1140                   # the start of the STS radio ID range
-stsModuleCount = 200                # the number of IDs per SM
-stsCamCount = 60                    # the numbr of IDs per camera
-stsRoughCount = 10                  # the number of IDs per roughing actor.
-stsCamIds = dict(r=0, b=1, n=2)     # the order of the cameras in per-module STS ids.
+stsSpsBase = 1140  # the start of the STS radio ID range
+stsModuleCount = 200  # the number of IDs per SM
+stsCamCount = 60  # the numbr of IDs per camera
+stsRoughCount = 10  # the number of IDs per roughing actor.
+stsCamIds = dict(r=0, b=1, n=2)  # the order of the cameras in per-module STS ids.
 actorBase = dict(meb=1096, agcc=2300, peb=2340, pfilamps=2380, fps=2400)
 
 
@@ -28,8 +28,9 @@ def camBase(smNum, arm):
     """
     smNum = int(smNum)
     return (stsSpsBase
-            + (smNum - 1)*stsModuleCount
-            + stsCamIds[arm]*stsCamCount)
+            + (smNum - 1) * stsModuleCount
+            + stsCamIds[arm] * stsCamCount)
+
 
 def enuBase(smNum):
     """Return the STS base radio ID for a given ENU actor.
@@ -46,15 +47,17 @@ def enuBase(smNum):
     """
     smNum = int(smNum)
     return (stsSpsBase
-            + (smNum - 1)*stsModuleCount
-            + 3*stsCamCount)
+            + (smNum - 1) * stsModuleCount
+            + 3 * stsCamCount)
+
 
 def roughBase(roughNum):
     roughNum = int(roughNum)
-    if roughNum not in {1,2}:
+    if roughNum not in {1, 2}:
         raise ValueError('invalid roughing actor number')
 
-    return stsSpsBase + 4*stsModuleCount + (roughNum-1)*stsRoughCount
+    return stsSpsBase + 4 * stsModuleCount + (roughNum - 1) * stsRoughCount
+
 
 def parseAlertsModels(parts, cmd=None):
     """Generate a list of models from the list of parts, and their STS radio ID bases
@@ -114,6 +117,7 @@ def parseAlertsModels(parts, cmd=None):
     if cmd is not None:
         cmd.inform(f'text="loading STS models: {stsModels}"')
     return stsModels
+
 
 def stsIdFromModel(cmd, model, stsPrimaryId):
     """
@@ -177,7 +181,7 @@ def stsIdFromModel(cmd, model, stsPrimaryId):
                     else:
                         raise TypeError('unknown type')
 
-                    stsIds.append(dict(keyId=kv_i, stsId=stsPrimaryId + offset,
+                    stsIds.append(dict(keyId=kv_i, keyName=kvt.name, stsId=stsPrimaryId + offset,
                                        stsType=stsType, stsHelp=fullLabel, units=kvt.units))
                 except Exception as e:
                     cmd.warn(f'text="FAILED to generate stsIDs for {modelName}.{mk}[{kv_i}], {kvt}: {e}"')

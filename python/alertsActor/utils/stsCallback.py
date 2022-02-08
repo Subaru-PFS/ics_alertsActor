@@ -41,7 +41,7 @@ class DatumFactory(object):
 
 class STSCallback(object):
     """ Keyword callback, note that a keyword can have several fields."""
-    TIMEOUT = 120
+    TIMEOUT = 600
     STS_DATA_RATE = 300
 
     def __init__(self, actorName, stsMap, actor, logger):
