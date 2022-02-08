@@ -1,12 +1,12 @@
-import os
 from importlib import reload
 
 import alertsActor.Controllers.actorRules as actorRules
-import yaml
-from alertsActor.Controllers.alerts import CuAlert
+import alertsActor.utils.alertsFactory as alertsFactory
+import pfs.instdata.io as fileIO
 from opscore.protocols import types
 
 reload(actorRules)
+reload(alertsFactory)
 
 
 def checkTempRange(cls, keyVar, model):
@@ -19,14 +19,14 @@ def checkTempRange(cls, keyVar, model):
         return 'value is invalid !!'
 
     if not 80 < value < 330:
-        alertState = 'is out of range {value}K !!'.format(**dict(value=value))
+        alertState = 'is out of range {value}K !!'.format(value=value)
 
     return alertState
 
 
 def coolerPower(cls, keyVar, model):
     mode = cls.getValue(model.keyVarDict['cryoMode'])
-    alertState = CuAlert.check(cls, keyVar, model)
+    alertState = alertsFactory.CryoModeAlert.check(cls, keyVar, model)
     if mode == 'standby':
         return 'OK'
 
@@ -38,7 +38,7 @@ def ionpumpState(cls, keyVar, model):
     state = cls.getValue(keyVar)
 
     if mode in ['cooldown', 'operation'] and not state:
-        return cls.alertFmt.format(**dict(mode=mode, state=state))
+        return cls.alertFmt.format(mode=mode, state=state)
 
     return "OK"
 
@@ -60,16 +60,8 @@ def gatevalveState(cls, keyVar, model):
 
 
 class xcu(actorRules.ActorRules):
-    def __init__(self, actor, name):
-        actorRules.ActorRules.__init__(self, actor, name)
-
-    def loadAlertConfiguration(self):
-        return actorRules.ActorRules.loadAlertConfiguration(self, actorName='xcu_{cam}')
+    """ basic rules, just add handler from cryoMode"""
 
     def loadCryoMode(self, mode):
-        camType = 'nir' if 'xcu_n' in self.name else 'vis'
-        with open(os.path.expandvars(f'$ICS_ALERTSACTOR_DIR/config/cryoMode.yaml'), 'r') as cfgFile:
-            cfg = yaml.load(cfgFile, Loader=yaml.FullLoader)
-
-        conf = cfg[camType][mode]
-        return conf if conf is not None else {}
+        cfg = fileIO.loadConfig('cryoMode', subDirectory='alerts')
+        return cfg[self.name][mode]

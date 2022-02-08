@@ -4,46 +4,45 @@ import ics.utils.time as pfsTime
 import numpy as np
 
 
-class STSBuffer(list):
-    samplingTime = 300
+class DatumFactory(object):
+    NO_VALUE = 9998
 
-    def __init__(self, logger):
-        list.__init__(self)
-        self.logger = logger
-        self.sent = dict()
+    @staticmethod
+    def build(stsId, stsType, timestamp, value, alertState):
+        """ Build STS Datum"""
 
-    def filterTraffic(self):
-        return [datum for datum in self.__iter__() if self.doSend(datum)]
+        def keyToStsTypeAndValue(stsType, key, alertState):
+            """ Return the STS type for theActor given key. """
+            if stsType == 'FLOAT+TEXT':
+                stsType = stsDatum.Datum.FloatWithText
+                val = float(key) if isinstance(key, float) else np.nan
+                # convert to NO_VALUE if nan.
+                val = float(DatumFactory.NO_VALUE) if np.isnan(val) else val
+                return stsType, val
 
-    def check(self, datum):
-        try:
-            prev = self.sent[datum.id]
-        except KeyError:
-            return True
+            elif stsType == 'INTEGER+TEXT':
+                stsType = stsDatum.Datum.IntegerWithText
+                if isinstance(key, int):
+                    val = int(key)
+                elif isinstance(key, str):
+                    val = 1 if alertState != 'OK' else 0
+                else:
+                    # convert to NO_VALUE.
+                    val = int(DatumFactory.NO_VALUE)
+                return stsType, val
+            else:
+                raise TypeError(f'do not know how to convert a {stsType}')
 
-        if (datum.timestamp - prev.timestamp) > STSBuffer.samplingTime:
-            return True
-
-        prevValue, prevState = prev.value
-        currValue, currState = datum.value
-
-        if (currState != 'OK' and prevState == 'OK') or (currState == 'OK' and prevState != 'OK'):
-            return True
-
-        return False
-
-    def doSend(self, datum):
-        doSend = self.check(datum)
-        if doSend:
-            self.sent[datum.id] = datum
-        else:
-            self.logger.debug(f'not forwarded to STS : {datum}')
-        return doSend
+        # convert to stsType.
+        stsType, val = keyToStsTypeAndValue(stsType, value, alertState)
+        # create STS datum.
+        return stsType(stsId, timestamp=int(timestamp), value=(val, alertState))
 
 
 class STSCallback(object):
     """ Keyword callback, note that a keyword can have several fields."""
-    TIMEOUT = 600
+    TIMEOUT = 120
+    STS_DATA_RATE = 300
 
     def __init__(self, actorName, stsMap, actor, logger):
         self.actorName = actorName
@@ -52,26 +51,7 @@ class STSCallback(object):
         self.logger = logger
 
         self.timestamp = pfsTime.timestamp()
-        self.stsBuffer = STSBuffer(logger)
-
-    def keyToStsTypeAndValue(self, stsType, key, alertState):
-        """ Return the STS type for theActor given key. """
-        if stsType == 'FLOAT+TEXT':
-            stsType = stsDatum.Datum.FloatWithText
-            val = float(key) if isinstance(key, float) else np.nan
-            return stsType, val
-
-        elif stsType == 'INTEGER+TEXT':
-            stsType = stsDatum.Datum.IntegerWithText
-            if isinstance(key, int):
-                val = int(key)
-            elif isinstance(key, str):
-                val = 1 if alertState != 'OK' else 0
-            else:
-                val = -9999
-            return stsType, val
-        else:
-            raise TypeError(f'do not know how to convert a {stsType}')
+        self.transmitted = dict()
 
     def __call__(self, keyVar, new=True):
         """ This function is called when new keys are received by the dispatcher. """
@@ -79,13 +59,30 @@ class STSCallback(object):
         def genTimeoutAlert(timestamp):
             return f'NO DATA SINCE {pfsTime.Time.fromtimestamp(timestamp).isoformat(microsecond=False)}'
 
-        def addIdentification(stsHelp, alertMsg, doAddIdentifier=True):
-            """ add identifier to alert message. """
-            alertMsg = [stsHelp, alertMsg] if doAddIdentifier else [alertMsg]
-            return ' '.join(alertMsg)
+        def alertStateChanged(datum):
+            """ check if new datum alert state is different from previous one """
+            try:
+                prev = self.transmitted[datum.id]
+            except KeyError:
+                return True
+
+            if (datum.timestamp - prev.timestamp) > STSCallback.STS_DATA_RATE:
+                return True
+
+            prevValue, prevState = prev.value
+            currValue, currState = datum.value
+
+            if (currState != 'OK' and prevState == 'OK') or (currState == 'OK' and prevState != 'OK'):
+                return True
+
+            return False
+
+        buffer = []
 
         now = pfsTime.timestamp()
+        # timestamp is only assigned when a new value is generated.
         self.timestamp = now if new else self.timestamp
+        # checking for timeout.
         uptodate = now - self.timestamp < STSCallback.TIMEOUT
 
         if not new and uptodate:
@@ -99,20 +96,27 @@ class STSCallback(object):
             else:
                 alertState = genTimeoutAlert(self.timestamp)
 
-            alertState = addIdentification(stsHelp, alertState, doAddIdentifier=self.actor.alertsNeedIdentifier)
-
-            stsType, val = self.keyToStsTypeAndValue(stsType, keyVar[keyId], alertState)
-            datum = stsType(stsId, timestamp=int(now), value=(val, alertState))
-            doSend = self.stsBuffer.check(datum)
+            datum = DatumFactory.build(stsId, stsType, timestamp=now, value=keyVar[keyId], alertState=alertState)
+            # check if that datum needs to be sent right away.
+            doSend = alertStateChanged(datum)
 
             self.logger.info('updating(doSend=%s) STSid %d(%s) from %s.%s[%s] with (%s, %s)',
-                             doSend, stsId, stsType.__name__, keyVar.actor, keyVar.name, keyId, val, alertState)
-            self.stsBuffer.append(datum)
+                             doSend, stsId, stsType, keyVar.actor, keyVar.name, keyId, datum.value[0], datum.value[1])
 
-        toSend = self.stsBuffer.filterTraffic()
-        if len(toSend) > 0:
-            stsHost = self.actor.config.get('sts', 'host')
-            self.logger.debug('flushing STS (host=%s), with: %s', stsHost, toSend)
-            stsServer = stsRadio.Radio(host=stsHost)
-            stsServer.transmit(toSend)
-            self.stsBuffer.clear()
+            if doSend:
+                buffer.append(datum)
+
+        self.transmit(buffer, stsHost=self.actor.stsHost)
+
+    def transmit(self, buffer, stsHost):
+        """ transmit datum and clear buffer."""
+        if not buffer:
+            return
+
+        self.logger.debug('flushing STS (host=%s), with: %s', stsHost, buffer)
+        stsServer = stsRadio.Radio(host=stsHost)
+        stsServer.transmit(buffer)
+
+        # record transmitted datums.
+        for datum in buffer:
+            self.transmitted[datum.id] = datum

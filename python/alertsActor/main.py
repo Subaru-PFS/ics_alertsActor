@@ -5,7 +5,6 @@ import logging
 
 from actorcore import ICC
 from alertsActor.utils import sts as stsUtils
-from ics.utils.sps.spectroIds import getSite
 
 
 class OurActor(ICC.ICC):
@@ -20,10 +19,6 @@ class OurActor(ICC.ICC):
         ICC.ICC.__init__(self, name,
                          productName=productName,
                          configFile=configFile)
-        self.site = getSite()
-
-        # STS already provides identifier which not the case for LAM
-        self.alertsNeedIdentifier = self.site != 'S'
 
         self.everConnected = False
 

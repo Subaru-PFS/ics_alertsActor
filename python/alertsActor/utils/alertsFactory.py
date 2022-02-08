@@ -9,11 +9,13 @@ from opscore.protocols import types
 class Alert(object):
     def __init__(self, actorRules, call, alertFmt, fieldId=0, **kwargs):
         self.actorRules = actorRules
+        # just call regular check
         if isinstance(call, bool):
             self.call = self.check
+        # dynamically load python routine from module.
         else:
             modname, funcname = call.split('.')
-            module = importlib.import_module(modname)
+            module = importlib.import_module(f'alertsActor.Controllers.{modname}')
             self.call = partial(getattr(module, funcname), self)
 
         self.alertFmt = alertFmt
@@ -41,41 +43,54 @@ class Alert(object):
 class LimitsAlert(Alert):
     def __init__(self, *args, limits, **kwargs):
         Alert.__init__(self, *args, **kwargs)
-        self.limits = limits
+        self.setLimits(*limits)
 
-    def check(self, keyVar, model, lowBound=False, upBound=False):
-        lowBound = self.limits[0] if lowBound is False else lowBound
-        upBound = self.limits[1] if upBound is False else upBound
+    def setLimits(self, lowerLimit, upperLimit):
+        """ set alerts boundaries values."""
+        # deactivating boundary constrain if None.
+        lowerLimit = -np.inf if lowerLimit is None else lowerLimit
+        upperLimit = np.inf if upperLimit is None else upperLimit
 
-        lowBound = -np.inf if lowBound is None else lowBound
-        upBound = np.inf if upBound is None else upBound
+        self.lowerLimit = lowerLimit
+        self.upperLimit = upperLimit
 
+    def check(self, keyVar, model):
+        """ check value against limits."""
         alertState = Alert.check(self, keyVar=keyVar, model=model)
         if alertState != 'OK':
             return alertState
 
         value = self.getValue(keyVar)
 
-        if not lowBound <= value <= upBound:
-            alertState = self.alertFmt.format(**dict(value=value, lowerLimit=lowBound, upperLimit=upBound))
+        if not self.lowerLimit <= value <= self.upperLimit:
+            alertState = self.alertFmt.format(value=value, lowerLimit=self.lowerLimit, upperLimit=self.upperLimit)
 
         return alertState
 
 
-class CuAlert(LimitsAlert):
+class CryoModeAlert(LimitsAlert):
     def __init__(self, *args, **kwargs):
         Alert.__init__(self, *args, **kwargs)
 
-    def check(self, keyVar, model, lowBound=False, upBound=False):
-        mode = self.getValue(model.keyVarDict['cryoMode'])
-        conf = self.actorRules.loadCryoMode(mode=mode)
+    def check(self, keyVar, model):
+        def getLimits(cryoMode):
+            """ load limits from cryoMode"""
+            cryoRules = self.actorRules.loadCryoMode(cryoMode)
+            # no boundaries
+            if cryoRules is None:
+                return None, None
 
-        try:
-            lowBound, upBound = conf[f'{keyVar.name}[{self.fieldId}]']['limits']
-        except KeyError:
-            lowBound, upBound = None, None
+            key = f'{keyVar.name}[{self.fieldId}]'
+            # that key[field] might not have any rules in that particular cryoMode.
+            if key not in cryoRules.keys():
+                return None, None
 
-        return LimitsAlert.check(self, keyVar, model, lowBound=lowBound, upBound=upBound)
+            return cryoRules[key]['limits']
+
+        cryoMode = self.getValue(model.keyVarDict['cryoMode'])
+        limits = getLimits(cryoMode)
+        self.setLimits(*limits)
+        return LimitsAlert.check(self, keyVar, model)
 
 
 class RegexpAlert(Alert):
@@ -95,7 +110,7 @@ class RegexpAlert(Alert):
         alert = not alert if self.invert else alert
 
         if alert:
-            alertState = self.alertFmt.format(**dict(value=value))
+            alertState = self.alertFmt.format(value=value)
 
         return alertState
 
@@ -115,12 +130,12 @@ class BoolAlert(Alert):
         alert = not value if self.invert else value
 
         if alert:
-            alertState = self.alertFmt.format(**dict(value=value))
+            alertState = self.alertFmt.format(value=value)
 
         return alertState
 
 
-def factory(actorRules, alertType, **kwargs):
+def build(actorRules, alertType, **kwargs):
     if alertType == 'trigger':
         return Alert(actorRules, **kwargs)
     elif alertType == 'limits':
@@ -129,7 +144,7 @@ def factory(actorRules, alertType, **kwargs):
         return RegexpAlert(actorRules, **kwargs)
     elif alertType == 'boolean':
         return BoolAlert(actorRules, **kwargs)
-    elif alertType in ['viscu', 'nircu']:
-        return CuAlert(actorRules, **kwargs)
+    elif alertType == 'cryomode':
+        return CryoModeAlert(actorRules, **kwargs)
     else:
         raise KeyError('unknown alertType')

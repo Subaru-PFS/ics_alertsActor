@@ -21,8 +21,4 @@ def checkTempRange(cls, keyVar, model):
 
 
 class enu(actorRules.ActorRules):
-    def __init__(self, actor, name):
-        actorRules.ActorRules.__init__(self, actor, name)
-
-    def loadAlertConfiguration(self):
-        return actorRules.ActorRules.loadAlertConfiguration(self, actorName='enu_{smId}')
+    pass
