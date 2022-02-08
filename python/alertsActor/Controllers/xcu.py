@@ -1,11 +1,12 @@
 from importlib import reload
 
 import alertsActor.Controllers.actorRules as actorRules
+import alertsActor.utils.alertsFactory as alertsFactory
 import pfs.instdata.io as fileIO
-from alertsActor.utils.alertsFactory import CryoModeAlert
 from opscore.protocols import types
 
 reload(actorRules)
+reload(alertsFactory)
 
 
 def checkTempRange(cls, keyVar, model):
@@ -18,14 +19,14 @@ def checkTempRange(cls, keyVar, model):
         return 'value is invalid !!'
 
     if not 80 < value < 330:
-        alertState = 'is out of range {value}K !!'.format(**dict(value=value))
+        alertState = 'is out of range {value}K !!'.format(value=value)
 
     return alertState
 
 
 def coolerPower(cls, keyVar, model):
     mode = cls.getValue(model.keyVarDict['cryoMode'])
-    alertState = CryoModeAlert.check(cls, keyVar, model)
+    alertState = alertsFactory.CryoModeAlert.check(cls, keyVar, model)
     if mode == 'standby':
         return 'OK'
 
@@ -37,7 +38,7 @@ def ionpumpState(cls, keyVar, model):
     state = cls.getValue(keyVar)
 
     if mode in ['cooldown', 'operation'] and not state:
-        return cls.alertFmt.format(**dict(mode=mode, state=state))
+        return cls.alertFmt.format(mode=mode, state=state)
 
     return "OK"
 
@@ -62,5 +63,5 @@ class xcu(actorRules.ActorRules):
     """ basic rules, just add handler from cryoMode"""
 
     def loadCryoMode(self, mode):
-        cfg = fileIO.loadConfig('cryoMode.yaml', subDirectory='alerts')
+        cfg = fileIO.loadConfig('cryoMode', subDirectory='alerts')
         return cfg[self.name][mode]
