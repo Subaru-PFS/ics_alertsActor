@@ -42,6 +42,15 @@ class StsKey(object):
         stsValue, stsText = datum.value
         return stsText
 
+    @staticmethod
+    def repr(datum):
+        # return empty representation.
+        if datum is None:
+            return None, None, None
+
+        stsValue, stsText = datum.value
+        return pfsTime.Time.fromtimestamp(datum.timestamp).isoformat(microsecond=False), stsValue, f'"{stsText}"'
+
     def build(self, timestamp, stsValue, stsText):
         def convert(stsType, stsValue):
             if stsType == 'FLOAT+TEXT':
@@ -69,7 +78,7 @@ class Key(object):
         self.mhsKey = MhsKey(keyId, keyName)
         self.stsKey = StsKey(stsType, stsId, stsHelp, **kwargs)
         # initialize empty datum.
-        self.transitions = dict()
+        self.transitions = dict([(False, None), (True, None)])
         self.transmitted = None
         # initialize alertLogic
         self.alertLogic = None
@@ -80,7 +89,7 @@ class Key(object):
 
     @property
     def triggered(self):
-        return self.prevState != 'OK'
+        return self.prevState != 'None' and self.prevState != 'OK'
 
     @property
     def prevState(self):
@@ -140,3 +149,18 @@ class Key(object):
     def setAlertLogic(self, alertLogic):
         """Set a new alert logic to the key. note that history is always preserved."""
         self.alertLogic = alertLogic
+
+    def genIdKey(self):
+        return [self.stsKey.stsId]
+
+    def genAlertLogicStatus(self):
+        return f'{self.alertLogic.flavour}={",".join(map(str, self.genIdKey() + self.alertLogic.description))}'
+
+    def genDatumStatus(self):
+        return f'stsDatum={",".join(map(str, self.genIdKey() + list(StsKey.repr(self.transmitted))))}'
+
+    def genLastAlertStatus(self):
+        return f'lastAlert={",".join(map(str, self.genIdKey() + list(StsKey.repr(self.transitions[False]))))}'
+
+    def genLastOkStatus(self):
+        return f'lastOk={",".join(map(str, self.genIdKey() + list(StsKey.repr(self.transitions[True]))))}'

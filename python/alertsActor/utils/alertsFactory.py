@@ -22,6 +22,8 @@ class Alert(object):
 
 
 class LimitsAlert(Alert):
+    flavour = 'limitsAlert'
+
     class NoLimit(float):
         def __str__(self):
             return 'None'
@@ -39,8 +41,9 @@ class LimitsAlert(Alert):
         self.lowerLimit = lowerLimit
         self.upperLimit = upperLimit
 
-    def __str__(self):
-        return f'limitsAlert={self.lowerLimit},{self.upperLimit}'
+    @property
+    def description(self):
+        return [self.lowerLimit, self.upperLimit]
 
     def check(self, value):
         """Check value against limits."""
@@ -53,14 +56,17 @@ class LimitsAlert(Alert):
 
 
 class RegexpAlert(Alert):
+    flavour = 'regexpAlert'
+
     def __init__(self, *args, pattern, invert, **kwargs):
         Alert.__init__(self, *args, **kwargs)
         pattern = r"^OK$" if pattern is None else pattern
         self.pattern = pattern
         self.invert = invert
 
-    def __str__(self):
-        return f'regexpAlert={self.pattern},{not self.invert}'
+    @property
+    def description(self):
+        return [self.pattern, not self.invert]
 
     def check(self, value):
         """Check value against pattern."""
@@ -77,12 +83,15 @@ class RegexpAlert(Alert):
 
 
 class BoolAlert(Alert):
+    flavour = 'boolAlert'
+
     def __init__(self, *args, nominalValue, **kwargs):
         Alert.__init__(self, *args, **kwargs)
         self.nominalValue = nominalValue
 
-    def __str__(self):
-        return f'boolAlert={self.nominalValue}'
+    @property
+    def description(self):
+        return [self.nominalValue]
 
     def check(self, value):
         """Check value against nominal value."""

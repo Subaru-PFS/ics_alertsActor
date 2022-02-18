@@ -26,6 +26,7 @@ class xcu(actorRules.ActorRules):
         """reload alerts if cryoMode value changed."""
         cryoMode = keyVar.getValue()
         if cryoMode != self.cryoMode:
+            self.actor.bcast.inform(f'text="new cryoMode:{cryoMode} reloading alerts for {self.name}"')
             self.setAlertsLogic(self.actor.bcast)
             self.cryoMode = cryoMode
 
