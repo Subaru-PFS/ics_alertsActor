@@ -1,14 +1,22 @@
 import logging
 import re
+from importlib import reload
 
 import alertsActor.utils.alertsFactory as alertsFactory
-import alertsActor.utils.stsCallback as stsCB
+import alertsActor.utils.keyCallback as keyCB
 import pfs.instdata.io as fileIO
 from actorcore.QThread import QThread
+
+reload(keyCB)
 
 
 class ActorRules(QThread):
     """ Single thread per actor. it handles connection to STS and alerts configuration """
+
+    def __init__(self, actor, name):
+        QThread.__init__(self, actor, name, timeout=15)
+        self.logger = logging.getLogger(f'alerts_{name}')
+        self.cbs = dict()
 
     @property
     def model(self):
@@ -18,10 +26,10 @@ class ActorRules(QThread):
         except KeyError:
             raise KeyError(f'actor model for {self.name} is not loaded')
 
-    def __init__(self, actor, name):
-        QThread.__init__(self, actor, name, timeout=15)
-        self.logger = logging.getLogger(f'alerts_{name}')
-        self.cbs = []
+    @property
+    def keyCallbacks(self):
+        """ return actorModel"""
+        return [cb for cb in self.cbs.values() if isinstance(cb, keyCB.KeyCallback)]
 
     def start(self, cmd):
         """ call by controller.start()"""
@@ -29,7 +37,7 @@ class ActorRules(QThread):
         if self.name not in self.actor.models:
             self.actor.addModels([self.name])
 
-        # just connect mhs keyvar callback to update sts fieldIds.
+        # just connect mhs keyvar callback to update sts keyIds.
         self.connectSts(cmd)
         # create and set alerts on top on that.
         self.setAlertsLogic(cmd)
@@ -38,26 +46,38 @@ class ActorRules(QThread):
 
     def stop(self, cmd):
         """ call by controller.stop()"""
-        # remove all STSCallback
-        for keyVar, cb in self.cbs:
+        # remove all KeyCallback.
+        for keyVarName, cb in self.cbs.items():
             self.logger.warning('removing callback: %s', cb)
-            keyVar.removeCallback(cb)
-            # clear assigned alert.
-            for fieldId in range(len(keyVar)):
-                self.actor.clearAlert(self.name, keyVar, fieldId)
+            self.model[keyVarName].removeCallback(cb)
 
+        self.cbs.clear()
         self.exit()
 
-    def connectSts(self, cmd):
-        """ load STS.yaml and wire configured keywords to STSCallback."""
-        # load STS.yaml from instdata.config
-        cfg = fileIO.loadConfig('STS', subDirectory='alerts')
+    def loadCfg(self, fileName):
+        """ Load per-actor config from instdata.config given a filename."""
+        cfg = fileIO.loadConfig(fileName, subDirectory='alerts')
         cfgActors = cfg['actors']
 
         if self.name not in cfgActors:
-            raise RuntimeError(f'STS not configured for {self.name} ')
+            raise RuntimeError(f'{fileName} not configured for {self.name} ')
 
-        stsCfg = cfgActors[self.name]
+        return cfgActors[self.name]
+
+    def loadAlertsCfg(self, cmd):
+        """ Load per-actor alerts configuration """
+        try:
+            alertsCfg = self.loadCfg('keywordAlerts')
+        except RuntimeError:
+            cmd.warn(f'text="keywordAlerts not configured for {self.name}"')
+            alertsCfg = dict()
+
+        return alertsCfg
+
+    def connectSts(self, cmd):
+        """ load STS.yaml and wire configured keywords to KeyCallback."""
+        # load per-actor STS config.
+        stsCfg = self.loadCfg('STS')
 
         for keyName, keyConfig in stsCfg.items():
             try:
@@ -66,17 +86,17 @@ class ActorRules(QThread):
                 raise KeyError(f'keyvar {keyName} is not in the {self.name} model')
 
             # create a callback per keyword.
-            cb = stsCB.STSCallback(self.name, keyConfig, self.actor, self.logger)
+            cb = keyCB.KeyCallback(self, keyVar.name, keyConfig)
             self.logger.warning('wiring in %s.%s to %s', self.name, keyName, keyConfig)
 
             keyVar.addCallback(cb, callNow=False)
-            self.cbs.append((keyVar, cb))
+            self.cbs[keyVar.name] = cb
 
     def setAlertsLogic(self, cmd):
-        """ load keywordAlerts.yaml, create matching alert object and add them to the active alerts dictionary."""
+        """ Load per-actor alerts config, wire them to the existing KeyCallback."""
 
         def findIdentifier(keyName):
-            """ find fieldId from keyName if any."""
+            """ find keyId from keyName if any."""
             betweenBracket = re.search("(?<=\[)[^][]*(?=])", keyName)
 
             if betweenBracket is None:
@@ -88,50 +108,33 @@ class ActorRules(QThread):
 
             return keyNameStripped, identifier
 
-        # load keywordsAlerts from instdata.config
-        cfg = fileIO.loadConfig('keywordAlerts', subDirectory='alerts')
-        cfgActors = cfg['actors']
+        # load per-actor alerts config.
+        alertsCfg = self.loadAlertsCfg(cmd)
 
-        if self.name not in cfgActors:
-            cmd.warn(f'text="no alerts configured for {self.name}"')
-            return
-
-        alertCfg = cfgActors[self.name]
-
-        for keyName, keyConfig in alertCfg.items():
-            keyName, identifier = findIdentifier(keyName)
-
+        for keyDescription, keyConfig in alertsCfg.items():
+            keyVarName, identifier = findIdentifier(keyDescription)
+            if keyVarName not in self.cbs.keys():
+                cmd.warn(f'text="{self.name}: keyvar {keyVarName} is not described in STS.yaml"')
+                continue
+            # retrieve keyCallback.
+            cb = self.cbs[keyVarName]
+            # identify matching keys.
             try:
-                keyVar = self.model[keyName]
+                keys = cb.identify(identifier)
             except KeyError:
-                raise KeyError(f'keyvar {keyName} is not in the {self.name} model')
-
-            identifiers = map(str, list(range(len(keyVar)))) if identifier is None else [identifier]
-
-            try:
-                [cb] = [cb for kv, cb in self.cbs if kv == keyVar]
-                # identify stsMap both by keyId and keyName.
-                stsConfig = dict([(str(stsKey['keyId']), stsKey) for stsKey in cb.stsMap])
-                perName = dict([(stsKey['keyName'], stsKey) for stsKey in cb.stsMap if stsKey['keyName'] is not None])
-                stsConfig.update(perName)
-            except ValueError:
-                cmd.warn(f'text="{self.name}: keyvar {keyName} is not described in STS.yaml"')
+                cmd.warn(f'text="{self.name}: keyvar {keyVarName}[{identifier}] is not described in STS.yaml"')
                 continue
 
-            for identifier in identifiers:
-                if identifier not in stsConfig.keys():
-                    cmd.warn(f'text="{self.name}: keyvar {keyName}[{identifier}] is not described in STS.yaml"')
-                    continue
+            alertLogic = alertsFactory.build(**keyConfig)
 
-                stsMap = stsConfig[identifier]
-                # creating alert object and assign it to the active alerts dictionary.
-                alertObj = alertsFactory.build(self, fieldId=stsMap['keyId'], **keyConfig)
-                self.actor.assignAlert(self.name, keyVar, stsMap['keyId'], alertObj=alertObj)
+            for key in keys:
+                key.setAlertLogic(alertLogic)
 
     def handleTimeout(self, cmd=None):
         if self.exitASAP:
             raise SystemExit()
 
         # check for timeout alerts.
-        for keyVar, cb in self.cbs:
-            cb(keyVar, new=False)
+        for keyVarName, cb in self.cbs.items():
+            # call callback with keyVar
+            cb(self.model[keyVarName], newValue=False)
