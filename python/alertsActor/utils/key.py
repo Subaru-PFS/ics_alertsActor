@@ -151,16 +151,22 @@ class Key(object):
         self.alertLogic = alertLogic
 
     def genIdKey(self):
-        return [self.stsKey.stsId]
+        """Generate idenfiers for keyword generation."""
+        keyRepr = self.mhsKey.keyName if self.mhsKey.keyName is not None else self.mhsKey.keyId
+        return [self.stsKey.stsId, self.keyCB.actorRules.name, f'{self.keyCB.keyVarName}[{keyRepr}]']
 
     def genAlertLogicStatus(self):
+        """Generate alertLogic status."""
         return f'{self.alertLogic.flavour}={",".join(map(str, self.genIdKey() + self.alertLogic.description))}'
 
     def genDatumStatus(self):
+        """Generate current datum status."""
         return f'stsDatum={",".join(map(str, self.genIdKey() + list(StsKey.repr(self.transmitted))))}'
 
     def genLastAlertStatus(self):
+        """Generate last alert datum status."""
         return f'lastAlert={",".join(map(str, self.genIdKey() + list(StsKey.repr(self.transitions[False]))))}'
 
     def genLastOkStatus(self):
+        """Generate last OK datum status."""
         return f'lastOk={",".join(map(str, self.genIdKey() + list(StsKey.repr(self.transitions[True]))))}'
