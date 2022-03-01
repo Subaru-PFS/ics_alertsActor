@@ -1,3 +1,5 @@
+from importlib import reload
+
 import logging
 import os
 import re
@@ -7,8 +9,7 @@ import numpy as np
 import yaml
 from STSpy.STSpy import radio, datum
 from actorcore.QThread import QThread
-from alertsActor.Controllers.alerts import createAlert
-
+from alertsActor.Controllers import alerts
 
 def getFields(keyName):
     m = re.search("\[([0-9_]+)\]", keyName)
@@ -20,7 +21,7 @@ def getFields(keyName):
 
 
 class STSBuffer(list):
-    samplingTime = 300
+    samplingTime = 120
 
     def __init__(self, logger):
         list.__init__(self)
@@ -57,7 +58,7 @@ class STSBuffer(list):
 
 
 class STSCallback(object):
-    TIMEOUT = 600
+    TIMEOUT = 900
 
     def __init__(self, actorName, stsMap, actor, logger):
         self.actorName = actorName
@@ -97,9 +98,14 @@ class STSCallback(object):
             return
 
         for stsMap in self.stsMap:
-            keyId, stsHelp, stsId, stsType = stsMap['keyId'], stsMap['stsHelp'], stsMap['stsId'], stsMap['stsType']
-            alertFunc = self.actor.getAlertState if uptodate else self.timeout
-            alertState = alertFunc(self.actorName, key, keyId, delta=(now - self.now))
+            keyId, stsHelp, stsId, stsType = (stsMap['keyId'], stsMap['stsHelp'],
+                                              stsMap['stsId'], stsMap['stsType'])
+            if uptodate:
+                alertState = self.actor.getAlertState(self.actorName, key, keyId)
+            else:
+                timeString = time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime(self.now))
+                alertState = self.timeout(self.actorName, key, keyId, lastValid=timeString)
+                
             stsType, val = self.keyToStsTypeAndValue(stsType, key[keyId], alertState)
 
             self.logger.info('updating STSid %d(%s) from %s.%s[%s] with (%s, %s)',
@@ -117,8 +123,8 @@ class STSCallback(object):
             stsServer.transmit(toSend)
             self.stsBuffer.clear()
 
-    def timeout(self, actor, key, keyFieldId, delta):
-        return f'{actor} {key.name}[{keyFieldId}] NO DATA since {delta} s'
+    def timeout(self, actor, key, keyFieldId, lastValid):
+        return f'{actor} {key.name}[{keyFieldId}] NO DATA since {lastValid}'
 
 
 class ActorRules(QThread):
@@ -167,7 +173,8 @@ class ActorRules(QThread):
         """ Load keywordAlerts config """
         try:
             ret = self.getConfig('keywordAlerts.yaml', name=name)
-        except RuntimeError:
+        except RuntimeError as e:
+            self.logger.warn('failed to load alerts for %s: %s', name, e)
             ret = None, []
 
         return ret
@@ -175,7 +182,8 @@ class ActorRules(QThread):
     def setAlerts(self, cmd):
         """ Create and set Alerts state """
         model, cfg = self.getAlertConfig()
-
+        self.logger.info('added alerts for %s with keys=%s', model, cfg.keys())
+        
         for keyName in cfg:
             keyConfig = cfg[keyName]
             keyName, fields = getFields(keyName)
@@ -196,9 +204,10 @@ class ActorRules(QThread):
                     cmd.warn(f'text="{self.name}: keyvar {keyName}[{field}] is not described in STS.yaml"')
                     continue
                 
-                alert = createAlert(self, ind=field, **keyConfig)
+                alert = alerts.createAlert(self, ind=field, **keyConfig)
                 self.actor.setAlertState(actor=self.name, keyword=keyVar, newState=alert, field=field)
-
+                self.logger.info('added alert %s', alert)
+                
     def connectSts(self, cmd):
         """ Check for keywords or field to forward to STS. """
 

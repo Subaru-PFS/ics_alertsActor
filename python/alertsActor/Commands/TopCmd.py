@@ -24,11 +24,12 @@ class TopCmd(object):
         self.vocab = [
             ('ping', '', self.ping),
             ('status', '', self.status),
-            ('genSTS', '', self.genSTS)
+            ('genSTS', '', self.genSTS),
+            ('printAlerts', '', self.printAlerts),
         ]
 
         # Define typed command arguments for the above commands.
-        self.keys = keys.KeysDictionary("mcs_mcs", (1, 1),
+        self.keys = keys.KeysDictionary("alerts_alerts", (1, 1),
                                         )
 
 
@@ -55,5 +56,13 @@ class TopCmd(object):
 
         with open(os.path.expandvars(f'$ICS_ALERTSACTOR_DIR/config/STS.yaml'), 'w') as stsFile:
             yaml.dump(stsConfig, stsFile)
+
+        cmd.finish()
+
+    def printAlerts(self, cmd):
+        for controllerName, controller in self.actor.controllers.items():
+            if controllerName != "xcu_n8":
+                continue
+            cmd.inform('text="   controller=%s: %s"' % (controllerName, controller.cbs))
 
         cmd.finish()

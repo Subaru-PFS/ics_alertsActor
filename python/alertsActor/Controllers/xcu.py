@@ -3,11 +3,11 @@ from importlib import reload
 
 import alertsActor.Controllers.actorRules as actorRules
 import yaml
-from alertsActor.Controllers.alerts import CuAlert
+from alertsActor.Controllers import alerts
 from opscore.protocols import types
 
 reload(actorRules)
-
+reload(alerts)
 
 def checkTempRange(cls, keyword, model):
     alertState = "OK"
@@ -25,12 +25,19 @@ def checkTempRange(cls, keyword, model):
 
 def coolerPower(cls, keyword, model):
     mode = cls.getValue(model.keyVarDict['cryoMode'])
-    alertState = CuAlert.check(cls, keyword, model)
+    alertState = alerts.CuAlert.check(cls, keyword, model)
     if mode == 'standby':
         return 'OK'
 
     return alertState
 
+def gauge(cls, keyword, model):
+    mode = cls.getValue(model.keyVarDict['cryoMode'])
+    alertState = alerts.CuAlert.check(cls, keyword, model)
+    if mode == 'standby':
+        return 'OK'
+
+    return alertState
 
 def ionpumpState(cls, keyword, model):
     mode = cls.getValue(model.keyVarDict['cryoMode'])
@@ -62,13 +69,16 @@ class xcu(actorRules.ActorRules):
     def __init__(self, actor, name):
         actorRules.ActorRules.__init__(self, actor, name)
 
-    def getAlertConfig(self, name='xcu_{cam}'):
+    def getAlertConfig(self, name=None):
+        if name is None:
+            name = self.name
         return actorRules.ActorRules.getAlertConfig(self, name=name)
 
     def loadCryoMode(self, mode):
         camType = 'nir' if 'xcu_n' in self.name else 'vis'
         with open(os.path.expandvars(f'$ICS_ALERTSACTOR_DIR/config/cryoMode.yaml'), 'r') as cfgFile:
             cfg = yaml.load(cfgFile, Loader=yaml.FullLoader)
-
-        conf = cfg[camType][mode]
+        self.actor.logger.warn(f"checking {self.name} {camType}[{mode}]: {self.name in cfg} {cfg[self.name].keys() if self.name in cfg else 'Nothing'} ")
+        conf = cfg[self.name][mode]
+        self.actor.logger.warn(f"    found {conf}")
         return conf if conf is not None else {}

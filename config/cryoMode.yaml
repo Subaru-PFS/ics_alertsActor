@@ -73,14 +73,14 @@ nir: &NIR
       limits: [null, 40]
     pressure[0]:
       <<: *ALERT
-      limits: [null, 5.0e-6]
+      limits: [null, 2.0e-6]
   cooldown:
     coolerTemps[2]:
       <<: *ALERT
       limits: [null, 40]
     pressure[0]:
       <<: *ALERT
-      limits: [null, 5.0e-6]
+      limits: [null, 2.0e-6]
 
   operation:
     coolerTemps[2]:
@@ -88,11 +88,11 @@ nir: &NIR
       limits: [null, 40]
     pressure[0]:
       <<: *ALERT
-      limits: [null, 5.0e-6]
+      limits: [null, 1.0e-6]
   warmup:
     pressure[0]:
       <<: *ALERT
-      limits: [null, 5.0e-6]
+      limits: [null, 1.0e-6]
   bakeout:
     null
   unknown:

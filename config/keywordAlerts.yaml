@@ -92,7 +92,7 @@ actors:
     coolerStatus[2]:
       <<: *REGEXP_ALERT
       alertFmt: '{name} COOLER : {value} !!'
-    pressure:
+    pressure: &PRESSURE
       <<: *VISCU_ALERT
       alertFmt: '{name} pressure is too high : {value}Torr !!'
     turboSpeed:
@@ -151,6 +151,11 @@ actors:
   xcu_n4:
     <<: *XCU
 
+  xcu_n8:
+    <<: *XCU
+  xcu_r8:
+    <<: *XCU
+
   enu_{smId}: &ENU
     temps1:
       <<: *ALERT
@@ -168,7 +173,7 @@ actors:
   enu_sm4:
     <<: *ENU
 
-    tests:
+  tests:
     keytest1:
       <<: *ALERT
       call: tests.checkTempRange
