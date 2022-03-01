@@ -12,6 +12,12 @@ class xcu(actorRules.ActorRules):
         actorRules.ActorRules.__init__(self, *args, **kwargs)
         self.cryoMode = None
 
+    @property
+    def keyCallbacks(self):
+        """ return actorModel"""
+        # exclude cryoMode
+        return [cb for keyVarName, cb in self.cbs.items() if keyVarName != 'cryoMode']
+
     def start(self, cmd):
         """called by controller.start() ."""
         actorRules.ActorRules.start(self, cmd)

@@ -29,7 +29,7 @@ class ActorRules(QThread):
     @property
     def keyCallbacks(self):
         """ return actorModel"""
-        return [cb for cb in self.cbs.values() if isinstance(cb, keyCB.KeyCallback)]
+        return [cb for keyVarName, cb in self.cbs.items()]
 
     def start(self, cmd):
         """ call by controller.start()"""
@@ -60,7 +60,7 @@ class ActorRules(QThread):
         cfgActors = cfg['actors']
 
         if self.name not in cfgActors:
-            raise RuntimeError(f'{fileName} not configured for {self.name} ')
+            raise RuntimeError(f'{fileName} not configured for {self.name}')
 
         return cfgActors[self.name]
 
