@@ -18,10 +18,15 @@ class xcu(actorRules.ActorRules):
         # exclude cryoMode
         return [cb for keyVarName, cb in self.cbs.items() if keyVarName != 'cryoMode']
 
+    def getCryoModeValue(self, keyVar=None):
+        """Get cryoMode value from keyvar/model."""
+        keyVar = self.model['cryoMode'] if keyVar is None else keyVar
+        return keyVar.getValue(doRaise=False)
+
     def start(self, cmd):
         """called by controller.start() ."""
         actorRules.ActorRules.start(self, cmd)
-        self.cryoMode = self.model['cryoMode'].getValue()
+        self.cryoMode = self.getCryoModeValue()
 
         # reload alerts logic on cryoMode
         self.logger.warning(f'wiring in {self.name}.cryoMode to xcu.reloadAlerts()')
@@ -30,7 +35,7 @@ class xcu(actorRules.ActorRules):
 
     def reloadAlerts(self, keyVar, newValue=True):
         """reload alerts if cryoMode value changed."""
-        cryoMode = keyVar.getValue()
+        cryoMode = self.getCryoModeValue(keyVar)
         if cryoMode != self.cryoMode:
             self.actor.bcast.inform(f'text="new cryoMode:{cryoMode} reloading alerts for {self.name}"')
             self.setAlertsLogic(self.actor.bcast)
@@ -42,7 +47,7 @@ class xcu(actorRules.ActorRules):
         alertsCfg = actorRules.ActorRules.loadAlertsCfg(self, cmd)
         allRules = alertsCfg['all']
         # get cryoRules.
-        cryoMode = self.model['cryoMode'].getValue()
+        cryoMode = self.getCryoModeValue()
         cryoRules = alertsCfg[cryoMode] if cryoMode in alertsCfg.keys() else dict()
         # add cryoRules to allRules.
         allRules.update(cryoRules)
