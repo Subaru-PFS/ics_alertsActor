@@ -135,16 +135,29 @@ class Key(object):
             """Check if STS value is now obsolete and needs update."""
             return timestamp - self.transmitted.timestamp > Key.STS_DATA_RATE
 
+        def alertStatus(alertState):
+            """Get alert status from alert state, distinguish between OK, NO DATA and ALERT."""
+            if alertState == 'OK':
+                status = 0
+            elif 'NO DATA SINCE' in alertState:
+                status = 1
+            else:
+                status = 2
+
+            return status
+
         # lookup stsText
         newState = StsKey.getText(datum)
-        #  check if newState is different from previous one.
-        stateChanged = newState != self.prevState
+        #  check if newStatus is different from previous one.
+        prevStatus = alertStatus(self.prevState)
+        newStatus = alertStatus(newState)
+        statusChanged = prevStatus != newStatus
         # save transitions in that case.
-        if stateChanged:
+        if statusChanged:
             self.transitions[newState == 'OK'] = datum
 
         # if stateChange or if the value needs to be refreshed. 
-        return stateChanged or doUpdateSTS(datum.timestamp)
+        return statusChanged or doUpdateSTS(datum.timestamp)
 
     def setAlertLogic(self, alertLogic):
         """Set a new alert logic to the key. note that history is always preserved."""
