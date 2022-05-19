@@ -137,7 +137,9 @@ class Key(object):
 
         def alertStatus(alertState):
             """Get alert status from alert state, distinguish between OK, NO DATA and ALERT."""
-            if alertState == 'OK':
+            if alertState == 'None':
+                status = -1
+            elif alertState == 'OK':
                 status = 0
             elif 'NO DATA SINCE' in alertState:
                 status = 1
