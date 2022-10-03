@@ -1,4 +1,3 @@
-import os
 from importlib import reload
 
 import alertsActor.utils.sts as stsUtils
@@ -114,8 +113,6 @@ class TopCmd(object):
         if doFinish:
             cmd.finish()
 
-
-
     def genSTS(self, cmd):
         stsConfig = dict(actors={})
         for modelName, stsPrimaryId in self.actor.stsPrimaryIds.items():
@@ -123,7 +120,8 @@ class TopCmd(object):
                                                                              stsPrimaryId))
             stsConfig['actors'][modelName] = stsUtils.stsIdFromModel(cmd, self.actor.models[modelName], stsPrimaryId)
 
-        with open(os.path.expandvars(f'$ICS_ALERTSACTOR_DIR/config/STS.yaml'), 'w') as stsFile:
+        tmpPath = '/tmp/STS.yaml'
+        with open(tmpPath, 'w') as stsFile:
             yaml.dump(stsConfig, stsFile)
 
-        cmd.finish()
+        cmd.finish(f'text="STS ids successfully dumped to {tmpPath}"')
