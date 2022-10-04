@@ -6,13 +6,11 @@
 # "subclass" or "derive" from a shared xcu dictionary, but we have not done so.
 #
 vis = dict(cooler2Loop=4 * [''], cooler2Status=6 * [''], cooler2Temps=4 * [''],
-           temps=['Detector Box Temp', 'Mangin Temp', 'Spider Temp', 'Thermal Spreader Temp', 'Front Ring Temp', '', '', '', '', '',
-                  'Detector Strap 1 Temp', 'Detector Strap 2 Temp'],
+           nirTemps=11 * [''],
            heaters=4 * [''] + [None, None, 'ccd heater frac power', 'spreader heater frac power'],
            sampower=[''])
 
-nir = dict(temps=['Mirror Cell 1', 'Mangin', 'Mirror Cell 2', 'SiC Spreader', 'Front Ring', 'Spreader Pan', '',
-                  'Radiation Shield 1', 'Radiation Shield 2', 'Sidecar', 'Detector 1', 'Detector 2'],
+nir = dict(visTemps=7 * [''],
            heaters=4 * [None] + 4 * [''])
 
 override = dict()
