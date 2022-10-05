@@ -5,6 +5,7 @@ import logging
 
 from actorcore import ICC
 from alertsActor.utils import sts as stsUtils
+from ics.utils.sps.spectroIds import getSite
 
 
 class OurActor(ICC.ICC):
@@ -21,15 +22,17 @@ class OurActor(ICC.ICC):
                          configFile=configFile)
 
         self.everConnected = False
+        self.site = getSite()
 
         self.logger.setLevel(logLevel)
         self.aliveAlerts = dict()
-        parts = [part.strip() for part in self.config.get('alerts', 'parts').split(',')]
+
+        parts = self.actorConfig['parts'][self.site]
         self.stsPrimaryIds = stsUtils.parseAlertsModels(parts, cmd=self.bcast)
 
     @property
     def stsHost(self):
-        return self.config.get('sts', 'host').strip()
+        return self.actorConfig['sts']['host']
 
     def connectionMade(self):
         if self.everConnected is False:
