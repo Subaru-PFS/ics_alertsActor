@@ -45,10 +45,11 @@ class KeyCallback(object):
             doSend = key.doTransmit(datum)
             # avoid filling logs unnecessarily.
             if newValue or doSend:
-                self.logger.info('updating(doSend=%s) STSid %d(%s) from %s.%s[%s] with (%s, %s)',
-                                 doSend, key.stsKey.stsId, key.stsKey.stsType, keyVar.actor, keyVar.name,
-                                 keyId, datum.value[0], datum.value[1])
+                self.logger.debug('updating(doSend=%s) STSid %d(%s) from %s.%s[%s] with (%s, %s)',
+                                  doSend, key.stsKey.stsId, key.stsKey.stsType, keyVar.actor, keyVar.name,
+                                  keyId, datum.value[0], datum.value[1])
             if doSend:
+                key.genKey(datum)
                 buffer.append(datum)
 
         self.transmit(buffer, stsHost=self.actorRules.actor.stsHost)
@@ -65,6 +66,9 @@ class KeyCallback(object):
         # record transmitted datums.
         for datum in buffer:
             self.fromStsId[datum.id].transmitted = datum
+
+        # generate overall alertStatus keyword
+        self.actorRules.actor.bcast.inform(self.actorRules.actor.alertStatusKey)
 
     def identify(self, identifier):
         """Return iterable of keys matching the given identifier. """

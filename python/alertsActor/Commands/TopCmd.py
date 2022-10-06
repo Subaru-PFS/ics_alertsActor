@@ -23,21 +23,12 @@ class TopCmd(object):
             ('status', '', self.status),
             ('active', '', self.genActive),
             ('triggered', '', self.genTriggered),
-            ('all', '', self.genAll),
             ('genSTS', '', self.genSTS),
         ]
 
         # Define typed command arguments for the above commands.
         self.keys = keys.KeysDictionary("alerts_alerts", (1, 1),
                                         )
-
-    @property
-    def controllers(self):
-        return list(self.actor.controllers.values())
-
-    @property
-    def allKeys(self):
-        return sum([list(cb.keys.values()) for controller in self.controllers for cb in controller.keyCallbacks], [])
 
     def ping(self, cmd):
         """Query the actor for liveness/happiness."""
@@ -57,61 +48,34 @@ class TopCmd(object):
         if not triggered:
             self.genActive(cmd, doFinish=False)
 
-        cmd.finish()
+        cmd.finish(self.actor.alertStatusKey)
 
     def genActive(self, cmd, doFinish=True):
         """ """
-        active = [key for key in self.allKeys if key.active]
-
-        if active:
-            cmd.inform(f'alertsActive={",".join(map(str, [key.stsKey.stsId for key in active]))}')
+        active = [key for key in self.actor.allKeys if key.active]
 
         for key in active:
-            cmd.inform(key.genDatumStatus())
-            cmd.inform(key.genAlertLogicStatus())
+            key.genAlertLogic(cmd)
+
+            if key.triggered:
+                key.genLastAlert(cmd)
+            else:
+                key.genLastOk(cmd)
 
         if doFinish:
-            cmd.finish()
+            cmd.finish(self.actor.alertStatusKey)
 
     def genTriggered(self, cmd, doFinish=True):
         """ """
-        triggered = [key for key in self.allKeys if key.triggered]
+        triggered = [key for key in self.actor.allKeys if key.triggered]
 
-        if triggered:
-            cmd.inform('alertStatus=ALERT')
-            cmd.inform(f'alertsTriggered={",".join(map(str, [key.stsKey.stsId for key in triggered]))}')
-
-            for key in triggered:
-                cmd.inform(key.genDatumStatus())
-                cmd.inform(key.genLastOkStatus())
-
-        else:
-            cmd.inform('alertStatus=OK')
+        for key in triggered:
+            key.genLastAlert(cmd)
 
         if doFinish:
-            cmd.finish()
+            cmd.finish(self.actor.alertStatusKey)
 
         return triggered
-
-    def genAll(self, cmd, doFinish=True):
-        """ """
-        active = [key for key in self.allKeys if key.active]
-        if active:
-            cmd.inform(f'alertsActive={",".join(map(str, [key.stsKey.stsId for key in active]))}')
-
-        for key in self.allKeys:
-            cmd.inform(key.genDatumStatus())
-
-            if key.triggered:
-                cmd.inform(key.genLastOkStatus())
-            else:
-                cmd.inform(key.genLastAlertStatus())
-
-            if key.active:
-                cmd.inform(key.genAlertLogicStatus())
-
-        if doFinish:
-            cmd.finish()
 
     def genSTS(self, cmd):
         stsConfig = dict(actors={})

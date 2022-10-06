@@ -55,6 +55,16 @@ class OurActor(ICC.ICC):
 
                 self.callCommand(f'connect controller={model} name={name}')
 
+    @property
+    def allKeys(self):
+        return sum([list(cb.keys.values()) for ctrl in self.controllers.values() for cb in ctrl.keyCallbacks], [])
+
+    @property
+    def alertStatusKey(self):
+        triggered = [key for key in self.allKeys if key.triggered]
+        status = 'ALERT' if triggered else 'OK'
+        return f'alertStatus={status}'
+
 
 def main():
     parser = argparse.ArgumentParser()
