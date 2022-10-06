@@ -130,6 +130,14 @@ class ActorRules(QThread):
             for key in keys:
                 key.setAlertLogic(alertLogic)
 
+    def unsetAlertsLogic(self, cmd):
+        """Remove current alert logic from the existing callbacks."""
+        cmd.inform(f'text="unsetting all alerts logic for {self.name}"')
+
+        for keyCB in self.keyCallbacks:
+            for key in keyCB.identify(identifier=None):
+                key.setAlertLogic(None)
+
     def handleTimeout(self, cmd=None):
         if self.exitASAP:
             raise SystemExit()
