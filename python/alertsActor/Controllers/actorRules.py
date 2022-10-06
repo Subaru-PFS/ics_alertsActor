@@ -108,6 +108,9 @@ class ActorRules(QThread):
 
             return keyNameStripped, identifier
 
+        # first declare no logic for every keys
+        self.unsetAlertsLogic(cmd)
+
         # load per-actor alerts config.
         alertsCfg = self.loadAlertsCfg(cmd)
 
@@ -136,7 +139,7 @@ class ActorRules(QThread):
 
         for keyCB in self.keyCallbacks:
             for key in keyCB.identify(identifier=None):
-                key.setAlertLogic(None)
+                key.resetAlertLogic()
 
     def handleTimeout(self, cmd=None):
         if self.exitASAP:

@@ -1,4 +1,5 @@
 import STSpy.STSpy.datum as stsDatum
+import alertsActor.utils.alertsFactory as alertsFactory
 import ics.utils.time as pfsTime
 import numpy as np
 import opscore.protocols.types as types
@@ -73,6 +74,8 @@ class Key(object):
     TIMEOUT = 600
     STS_DATA_RATE = 300
 
+    alertOFF = alertsFactory.AlertOFF()
+
     def __init__(self, keyCB, keyId, keyName, stsType, stsId, stsHelp, **kwargs):
         self.keyCB = keyCB
         self.mhsKey = MhsKey(keyId, keyName)
@@ -81,11 +84,16 @@ class Key(object):
         self.transitions = dict([(False, None), (True, None)])
         self.transmitted = None
         # initialize alertLogic
-        self.alertLogic = None
+        self.alertLogic = self.alertOFF
+
+    @property
+    def actorKeyId(self):
+        index = f'_{self.mhsKey.keyName}' if self.mhsKey.keyName else ''
+        return f'{self.keyCB.actorRules.name}__{self.keyCB.keyVarName}{index}'
 
     @property
     def active(self):
-        return self.alertLogic is not None
+        return self.alertLogic != self.alertOFF
 
     @property
     def triggered(self):
@@ -96,6 +104,11 @@ class Key(object):
         # take care of initialisation
         prevState = 'None' if self.transmitted is None else StsKey.getText(self.transmitted)
         return prevState
+
+    def getCmd(self, cmd=None):
+        """Return cmd object in anycase."""
+        cmd = self.keyCB.actorRules.actor.bcast if cmd is None else cmd
+        return cmd
 
     def toStsDatum(self, timestamp, value):
         """Convert timestamp and value to a valid alert-compliant STS datum."""
@@ -114,7 +127,7 @@ class Key(object):
             # convert to a value that STS understand.
             stsValue = MhsKey.toStsValue(rawValue)
             # call alertLogic if any else OK.
-            stsText = 'OK' if not self.active else self.alertLogic.call(rawValue)
+            stsText = self.alertLogic.call(rawValue)
 
             return stsValue, stsText
 
@@ -156,6 +169,10 @@ class Key(object):
         statusChanged = prevStatus != newStatus
         # save transitions in that case.
         if statusChanged:
+            # generate transition keyword corresponding to previous state.
+            suffix = 'lastAlert' if newState == 'OK' else 'lastOK'
+            self.genKey(self.transitions[newState != 'OK'], suffix=f'_{suffix}')
+
             self.transitions[newState == 'OK'] = datum
 
         # if stateChange or if the value needs to be refreshed. 
@@ -164,24 +181,27 @@ class Key(object):
     def setAlertLogic(self, alertLogic):
         """Set a new alert logic to the key. note that history is always preserved."""
         self.alertLogic = alertLogic
+        self.genAlertLogic()
 
-    def genIdKey(self):
-        """Generate idenfiers for keyword generation."""
-        keyRepr = self.mhsKey.keyName if self.mhsKey.keyName is not None else self.mhsKey.keyId
-        return [self.stsKey.stsId, self.keyCB.actorRules.name, f'{self.keyCB.keyVarName}[{keyRepr}]']
+    def resetAlertLogic(self):
+        """Declaring no alertLogic for that key."""
+        self.alertLogic = self.alertOFF
+        self.genAlertLogic()
 
-    def genAlertLogicStatus(self):
-        """Generate alertLogic status."""
-        return f'{self.alertLogic.flavour}={",".join(map(str, self.genIdKey() + self.alertLogic.description))}'
+    def genAlertLogic(self, cmd=None):
+        """generate alertLogic keyword."""
+        self.getCmd(cmd).inform(f'{self.actorKeyId}_logic="{str(self.alertLogic)}"')
 
-    def genDatumStatus(self):
-        """Generate current datum status."""
-        return f'stsDatum={",".join(map(str, self.genIdKey() + list(StsKey.repr(self.transmitted))))}'
+    def genKey(self, datum, suffix='', cmd=None):
+        """Generate alert keyword."""
+        self.getCmd(cmd).inform(f'{self.actorKeyId}{suffix}={",".join(map(str, list(StsKey.repr(datum))))}')
 
-    def genLastAlertStatus(self):
-        """Generate last alert datum status."""
-        return f'lastAlert={",".join(map(str, self.genIdKey() + list(StsKey.repr(self.transitions[False]))))}'
+    def genLastOk(self, cmd):
+        """Generate last OK keyword."""
+        datum = self.transitions[True]
+        self.genKey(datum, cmd=cmd)
 
-    def genLastOkStatus(self):
-        """Generate last OK datum status."""
-        return f'lastOk={",".join(map(str, self.genIdKey() + list(StsKey.repr(self.transitions[True]))))}'
+    def genLastAlert(self, cmd):
+        """Generate last Alert keyword."""
+        datum = self.transitions[False]
+        self.genKey(datum, cmd=cmd)

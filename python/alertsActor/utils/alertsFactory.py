@@ -3,6 +3,13 @@ import re
 from functools import partial
 
 
+class AlertOFF(object):
+    def __str__(self):
+        return 'OFF'
+
+    def call(self, *args, **kwargs):
+        return 'OK'
+
 class Alert(object):
     def __init__(self, call=True, alertFmt=None):
         self.alertFmt = alertFmt
@@ -19,6 +26,9 @@ class Alert(object):
     def check(self, value):
         """ empty logic."""
         return 'OK'
+
+    def __str__(self):
+        return 'EmptyLogic'
 
 
 class LimitsAlert(Alert):
@@ -41,9 +51,8 @@ class LimitsAlert(Alert):
         self.lowerLimit = lowerLimit
         self.upperLimit = upperLimit
 
-    @property
-    def description(self):
-        return [self.lowerLimit, self.upperLimit]
+    def __str__(self):
+        return f'Limits({self.lowerLimit} <= value <= {self.upperLimit})'
 
     def check(self, value):
         """Check value against limits."""
@@ -64,9 +73,9 @@ class RegexpAlert(Alert):
         self.pattern = pattern
         self.invert = invert
 
-    @property
-    def description(self):
-        return [self.pattern, not self.invert]
+    def __str__(self):
+        log = 'not value match' if self.invert else 'value match'
+        return f'Regexp({log} {self.pattern})'
 
     def check(self, value):
         """Check value against pattern."""
@@ -89,9 +98,8 @@ class BoolAlert(Alert):
         Alert.__init__(self, *args, **kwargs)
         self.nominalValue = nominalValue
 
-    @property
-    def description(self):
-        return [self.nominalValue]
+    def __str__(self):
+        return f'Bool(value == {self.nominalValue})'
 
     def check(self, value):
         """Check value against nominal value."""

@@ -39,7 +39,6 @@ class xcu(actorRules.ActorRules):
         cryoMode = self.getCryoModeValue(keyVar)
         if cryoMode != self.cryoMode:
             cmd.inform(f'text="new cryoMode:{cryoMode} reloading alerts for {self.name}"')
-            self.unsetAlertsLogic(cmd)
             self.setAlertsLogic(cmd)
             self.cryoMode = cryoMode
 
