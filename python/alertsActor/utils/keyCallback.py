@@ -68,7 +68,7 @@ class KeyCallback(object):
             self.fromStsId[datum.id].transmitted = datum
 
         # generate overall alertStatus keyword
-        self.actorRules.actor.bcast.inform(self.actorRules.actor.alertStatusKey)
+        self.actorRules.actor.genAlertStatus()
 
     def identify(self, identifier):
         """Return iterable of keys matching the given identifier. """

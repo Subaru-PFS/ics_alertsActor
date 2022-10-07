@@ -11,7 +11,7 @@ from ics.utils.sps.spectroIds import getSite
 class OurActor(ICC.ICC):
     def __init__(self, name,
                  productName=None, configFile=None,
-                 logLevel=logging.DEBUG):
+                 logLevel=logging.DEBUG, ):
 
         """ Setup an Actor instance. See help for actorcore.Actor for details. """
 
@@ -19,7 +19,9 @@ class OurActor(ICC.ICC):
         #
         ICC.ICC.__init__(self, name,
                          productName=productName,
-                         configFile=configFile)
+                         configFile=configFile,
+                         modelNames=['alerts'],
+                         )
 
         self.everConnected = False
         self.site = getSite()
@@ -60,10 +62,32 @@ class OurActor(ICC.ICC):
         return sum([list(cb.keys.values()) for ctrl in self.controllers.values() for cb in ctrl.keyCallbacks], [])
 
     @property
-    def alertStatusKey(self):
+    def alertStatus(self):
         triggered = [key for key in self.allKeys if key.triggered]
         status = 'ALERT' if triggered else 'OK'
-        return f'alertStatus={status}'
+        return status
+
+    @property
+    def alertStatusKey(self):
+        return f'alertStatus={self.alertStatus}'
+
+    def attachController(self, *args, **kwargs):
+        """Just generating alertStatus on stop"""
+        ICC.ICC.attachController(self, *args, **kwargs)
+        self.genAlertStatus()
+
+    def detachController(self, *args, **kwargs):
+        """Just generating alertStatus on stop"""
+        ICC.ICC.detachController(self, *args, **kwargs)
+        self.genAlertStatus()
+
+    def genAlertStatus(self):
+        """generate overall alertStatus if necessary."""
+        previous = self.models['alerts'].keyVarDict['alertStatus'].getValue(doRaise=False)
+        current = self.alertStatus
+        # in that generate generate keyword, otherwise just ignore.
+        if current != previous:
+            self.bcast.inform(self.alertStatusKey)
 
 
 def main():
