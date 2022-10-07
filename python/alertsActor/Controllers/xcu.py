@@ -47,9 +47,15 @@ class xcu(actorRules.ActorRules):
         # regular loadAlertCfg and load general rules.
         alertsCfg = actorRules.ActorRules.loadAlertsCfg(self, cmd)
         allRules = alertsCfg['all']
-        # get cryoRules.
+        # get cryoMode.
         cryoMode = self.getCryoModeValue()
-        cryoRules = alertsCfg[cryoMode] if cryoMode in alertsCfg.keys() else dict()
+        if not cryoMode:
+            return allRules
+        # get cryoRules and check if cryoRules is not empty.
+        cryoRules = alertsCfg[cryoMode]
+        if not cryoRules:
+            cmd.warn(f'text="no rules has been defined for cryoMode:{cryoMode}..."')
+            cryoRules = dict()
         # add cryoRules to allRules.
         allRules.update(cryoRules)
 
