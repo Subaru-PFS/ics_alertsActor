@@ -30,6 +30,11 @@ class TopCmd(object):
         self.keys = keys.KeysDictionary("alerts_alerts", (1, 1),
                                         )
 
+    def controllerKey(self):
+        controllerNames = list(self.actor.controllers.keys())
+        key = 'controllers=%s' % (','.join([c for c in controllerNames]) if controllerNames else None)
+        return key
+
     def ping(self, cmd):
         """Query the actor for liveness/happiness."""
 
@@ -41,6 +46,7 @@ class TopCmd(object):
 
         self.actor.sendVersionKey(cmd)
         cmd.inform(f'text="controllers: {self.actor.controllers}')
+        cmd.inform(self.controllerKey())
         cmd.inform('text="Present!"')
 
         triggered = self.genTriggered(cmd, doFinish=False)
