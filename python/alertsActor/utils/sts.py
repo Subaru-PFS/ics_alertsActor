@@ -8,7 +8,7 @@ stsModuleCount = 200  # the number of IDs per SM
 stsCamCount = 60  # the numbr of IDs per camera
 stsRoughCount = 10  # the number of IDs per roughing actor.
 stsCamIds = dict(r=0, b=1, n=2)  # the order of the cameras in per-module STS ids.
-actorBase = dict(meb=1096, agcc=2300, peb=2340, pfilamps=2380, fps=2400)
+actorBase = dict(meb=1096, agcc=2300, peb=2340, pfilamps=2380, fps=2400, aitroom=2500)
 
 
 def camBase(smNum, arm):
