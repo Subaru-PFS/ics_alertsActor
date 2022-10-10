@@ -59,6 +59,11 @@ class ActorRules(QThread):
         cfg = fileIO.loadConfig(fileName, subDirectory='alerts')
         cfgActors = cfg['actors']
 
+        # extending STS config with optional local configuration.
+        if fileName == 'STS' and 'extendSTS' in self.actor.localConfig:
+            moreCfg = fileIO.loadConfig(self.actor.localConfig['extendSTS'], subDirectory='alerts')
+            cfgActors.update(moreCfg['actors'])
+
         if self.name not in cfgActors:
             raise RuntimeError(f'{fileName} not configured for {self.name}')
 

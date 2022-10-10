@@ -29,12 +29,16 @@ class OurActor(ICC.ICC):
         self.logger.setLevel(logLevel)
         self.aliveAlerts = dict()
 
-        parts = self.actorConfig[self.site]['parts']
+        parts = self.localConfig['parts']
         self.stsPrimaryIds = stsUtils.parseAlertsModels(parts, cmd=self.bcast)
 
     @property
+    def localConfig(self):
+        return self.actorConfig[self.site]
+
+    @property
     def stsHost(self):
-        return self.actorConfig[self.site]['stsHost']
+        return self.localConfig['stsHost']
 
     def connectionMade(self):
         if self.everConnected is False:
