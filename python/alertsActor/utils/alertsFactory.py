@@ -10,6 +10,7 @@ class AlertOFF(object):
     def call(self, *args, **kwargs):
         return 'OK'
 
+
 class Alert(object):
     def __init__(self, call=True, alertFmt=None):
         self.alertFmt = alertFmt
@@ -41,7 +42,7 @@ class LimitsAlert(Alert):
     noLowerLimit = NoLimit('-inf')
     noUpperLimit = NoLimit('inf')
 
-    def __init__(self, *args, limits, **kwargs):
+    def __init__(self, *args, limits, lowerBoundInclusive, upperBoundInclusive, **kwargs):
         Alert.__init__(self, *args, **kwargs)
         # deactivating boundary constrain if None.
         lowerLimit, upperLimit = limits
@@ -51,14 +52,22 @@ class LimitsAlert(Alert):
         self.lowerLimit = lowerLimit
         self.upperLimit = upperLimit
 
+        self.lowerBoundInclusive = lowerBoundInclusive
+        self.upperBoundInclusive = upperBoundInclusive
+
     def __str__(self):
-        return f'Limits({self.lowerLimit} <= value <= {self.upperLimit})'
+        logic1 = '<=' if self.lowerBoundInclusive else '<'
+        logic2 = '<=' if self.upperBoundInclusive else '<'
+        return f'Limits({self.lowerLimit} {logic1} value {logic2} {self.upperLimit})'
 
     def check(self, value):
         """Check value against limits."""
         alertState = 'OK'
 
-        if not self.lowerLimit <= value <= self.upperLimit:
+        lowerBoundOK = value >= self.lowerLimit if self.lowerBoundInclusive else value > self.lowerLimit
+        upperBoundOK = value <= self.upperLimit if self.upperBoundInclusive else value < self.upperLimit
+
+        if not (lowerBoundOK and upperBoundOK):
             alertState = self.alertFmt.format(value=value, lowerLimit=self.lowerLimit, upperLimit=self.upperLimit)
 
         return alertState
