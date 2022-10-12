@@ -77,6 +77,7 @@ class Key(object):
     alertOFF = alertsFactory.AlertOFF()
 
     def __init__(self, keyCB, keyId, keyName, stsType, stsId, stsHelp, **kwargs):
+        self.invalidCounter = 0
         self.keyCB = keyCB
         self.mhsKey = MhsKey(keyId, keyName)
         self.stsKey = StsKey(stsType, stsId, stsHelp, **kwargs)
@@ -105,6 +106,10 @@ class Key(object):
         prevState = 'None' if self.transmitted is None else StsKey.getText(self.transmitted)
         return prevState
 
+    @property
+    def allowInvalid(self):
+        return self.keyCB.actorRules.actor.actorConfig['allowInvalid']
+
     def getCmd(self, cmd=None):
         """Return cmd object in anycase."""
         cmd = self.keyCB.actorRules.actor.bcast if cmd is None else cmd
@@ -120,9 +125,18 @@ class Key(object):
 
         def checkValue(rawValue):
             """ """
-            # directly return invalid value.
+            # checking first for invalid values.
             if MhsKey.isInvalid(rawValue):
-                return Key.INVALID_VALUE[self.stsKey.stsType], Key.INVALID_TEXT
+                self.invalidCounter += 1
+
+                if self.invalidCounter > self.allowInvalid:
+                    return Key.INVALID_VALUE[self.stsKey.stsType], Key.INVALID_TEXT
+                else:
+                    # slightly weird but okay I guess for now.
+                    return Key.INVALID_VALUE[self.stsKey.stsType], 'OK'
+            else:
+                # reset counter
+                self.invalidCounter = 0
 
             # convert to a value that STS understand.
             stsValue = MhsKey.toStsValue(rawValue)
