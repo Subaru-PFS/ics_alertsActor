@@ -77,10 +77,11 @@ class Key(object):
     alertOFF = alertsFactory.AlertOFF()
 
     def __init__(self, keyCB, keyId, keyName, stsType, stsId, stsHelp, **kwargs):
-        self.invalidCounter = 0
         self.keyCB = keyCB
         self.mhsKey = MhsKey(keyId, keyName)
         self.stsKey = StsKey(stsType, stsId, stsHelp, **kwargs)
+        # initialize invalid value counter
+        self.invalidCounter = 0
         # initialize empty datum.
         self.transitions = dict([(False, None), (True, None)])
         self.transmitted = None
@@ -115,7 +116,7 @@ class Key(object):
         cmd = self.keyCB.actorRules.actor.bcast if cmd is None else cmd
         return cmd
 
-    def toStsDatum(self, timestamp, value):
+    def toStsDatum(self, timestamp, value, newValue=True):
         """Convert timestamp and value to a valid alert-compliant STS datum."""
 
         def genTimeoutText(timestamp):
@@ -127,17 +128,12 @@ class Key(object):
             """ """
             # checking first for invalid values.
             if MhsKey.isInvalid(rawValue):
-                self.invalidCounter += 1
+                # increase counter only with actual invalid value.
+                self.invalidCounter += int(newValue)
+                return Key.INVALID_VALUE[self.stsKey.stsType], Key.INVALID_TEXT
 
-                if self.invalidCounter > self.allowInvalid:
-                    return Key.INVALID_VALUE[self.stsKey.stsType], Key.INVALID_TEXT
-                else:
-                    # slightly weird but okay I guess for now.
-                    return Key.INVALID_VALUE[self.stsKey.stsType], 'OK'
-            else:
-                # reset counter
-                self.invalidCounter = 0
-
+            # reset invalid counter
+            self.invalidCounter = 0
             # convert to a value that STS understand.
             stsValue = MhsKey.toStsValue(rawValue)
             # call alertLogic if any else OK.
@@ -168,18 +164,26 @@ class Key(object):
                 status = -1
             elif alertState == 'OK':
                 status = 0
+            elif alertState == Key.INVALID_TEXT:
+                # setting status to 1 if invalid counter is not above limit.
+                status = 1 if self.invalidCounter <= self.allowInvalid else 2
             elif 'NO DATA SINCE' in alertState:
-                status = 1
+                status = 3
             else:
-                status = 2
+                status = 4
 
             return status
 
         # lookup stsText
         newState = StsKey.getText(datum)
-        #  check if newStatus is different from previous one.
-        prevStatus = alertStatus(self.prevState)
+        # converting alertState to status.
         newStatus = alertStatus(newState)
+        prevStatus = alertStatus(self.prevState)
+        # value is invalid but below invalid limit, we do not transmit and wait for the next datum.
+        if newStatus == 1:
+            self.getCmd().warn(f'text="{self.actorKeyId} invalidCounter={self.invalidCounter}, ignoring for now...')
+            return False
+        # check if newStatus is different from previous one
         statusChanged = prevStatus != newStatus
         # save transitions in that case.
         if statusChanged:

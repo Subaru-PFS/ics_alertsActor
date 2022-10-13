@@ -40,7 +40,7 @@ class KeyCallback(object):
 
         for keyId, key in self.keys.items():
             # convert timestamp and value to a valid alert-compliant STS datum."""
-            datum = key.toStsDatum(keyVar.timestamp, values[keyId])
+            datum = key.toStsDatum(keyVar.timestamp, values[keyId], newValue=newValue)
             # assess whether it needs to be transmitted or not.
             doSend = key.doTransmit(datum)
             # avoid filling logs unnecessarily.
