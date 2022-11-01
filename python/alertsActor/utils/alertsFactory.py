@@ -58,7 +58,16 @@ class LimitsAlert(Alert):
     def __str__(self):
         logic1 = '<=' if self.lowerBoundInclusive else '<'
         logic2 = '<=' if self.upperBoundInclusive else '<'
-        return f'Limits({self.lowerLimit} {logic1} value {logic2} {self.upperLimit})'
+
+        if self.lowerLimit != self.noLowerLimit and self.upperLimit == self.noUpperLimit:
+            logic1 = logic1.replace('<', '>')
+            alertStr = f'value {logic1} {self.lowerLimit}'
+        elif self.lowerLimit == self.noLowerLimit and self.upperLimit != self.noUpperLimit:
+            alertStr = f'value {logic2} {self.upperLimit}'
+        else:
+            alertStr = f'{self.lowerLimit} {logic1} value {logic2} {self.upperLimit}'
+
+        return f'Limits({alertStr})'
 
     def check(self, value):
         """Check value against limits."""
