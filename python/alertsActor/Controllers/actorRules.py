@@ -4,7 +4,7 @@ from importlib import reload
 
 import alertsActor.utils.alertsFactory as alertsFactory
 import alertsActor.utils.keyCallback as keyCB
-import pfs.instdata.io as fileIO
+import ics.utils.instdata.io as instdataIO
 from actorcore.QThread import QThread
 
 reload(keyCB)
@@ -56,12 +56,12 @@ class ActorRules(QThread):
 
     def loadCfg(self, fileName):
         """ Load per-actor config from instdata.config given a filename."""
-        cfg = fileIO.loadConfig(fileName, subDirectory='alerts')
+        cfg = instdataIO.loadConfig(fileName, subDirectory='alerts')
         cfgActors = cfg['actors']
 
         # extending STS config with optional local configuration.
         if fileName == 'STS' and 'extendSTS' in self.actor.localConfig:
-            moreCfg = fileIO.loadConfig(self.actor.localConfig['extendSTS'], subDirectory='alerts')
+            moreCfg = instdataIO.loadConfig(self.actor.localConfig['extendSTS'], subDirectory='alerts')
             cfgActors.update(moreCfg['actors'])
 
         if self.name not in cfgActors:
