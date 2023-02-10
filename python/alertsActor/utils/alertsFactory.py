@@ -12,14 +12,17 @@ class AlertOFF(object):
 
 
 class Alert(object):
-    def __init__(self, call=True, alertFmt=None):
+    def __init__(self, controller, call=True, alertFmt=None):
+        self.controller = controller
         self.alertFmt = alertFmt
 
         # just call regular check
         if isinstance(call, bool):
+            self.logicStr = 'EmptyLogic'
             self.call = self.check
         # dynamically load python routine from module.
         else:
+            self.logicStr = f'Callback({call})'
             modname, funcname = call.split('.')
             module = importlib.import_module(f'alertsActor.Controllers.{modname}')
             self.call = partial(getattr(module, funcname), self)
@@ -29,7 +32,7 @@ class Alert(object):
         return 'OK'
 
     def __str__(self):
-        return 'EmptyLogic'
+        return self.logicStr
 
 
 class LimitsAlert(Alert):
