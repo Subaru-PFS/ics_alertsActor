@@ -133,7 +133,7 @@ class ActorRules(QThread):
                 cmd.warn(f'text="{self.name}: keyvar {keyVarName}[{identifier}] is not described in STS.yaml"')
                 continue
 
-            alertLogic = alertsFactory.build(**keyConfig)
+            alertLogic = alertsFactory.build(self, **keyConfig)
 
             for key in keys:
                 key.setAlertLogic(alertLogic)
