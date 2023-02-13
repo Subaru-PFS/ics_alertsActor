@@ -100,7 +100,7 @@ class ActorRules(QThread):
             keyVar.addCallback(cb, callNow=False)
             self.cbs[keyVar.name] = cb
 
-    def setAlertsLogic(self, cmd):
+    def setAlertsLogic(self, cmd, doActivate=True):
         """ Load per-actor alerts config, wire them to the existing KeyCallback."""
 
         def findIdentifier(keyName):
@@ -117,7 +117,7 @@ class ActorRules(QThread):
             return keyNameStripped, identifier
 
         # first declare no logic for every keys
-        self.unsetAlertsLogic(cmd)
+        self.unsetAlertsLogic(cmd, doActivate=doActivate)
 
         # load per-actor alerts config.
         alertsCfg = self.loadAlertsCfg(cmd)
@@ -137,16 +137,18 @@ class ActorRules(QThread):
                 continue
 
             alertLogic = alertsFactory.build(self, **keyConfig)
+            # alertLogic should always be activated by default, unless if force not to.
+            alertLogic.setActivated(doActivate)
 
             for key in keys:
                 key.setAlertLogic(alertLogic)
 
-    def unsetAlertsLogic(self, cmd):
+    def unsetAlertsLogic(self, cmd, doActivate=True):
         """Remove current alert logic from the existing callbacks."""
         cmd.inform(f'text="unsetting all alerts logic for {self.name}"')
 
         for key in self.allKeys():
-            key.resetAlertLogic()
+            key.resetAlertLogic(doActivate=doActivate)
 
     def genAlertLogicKeys(self):
         """Generate alertLogic keyword for all keys."""

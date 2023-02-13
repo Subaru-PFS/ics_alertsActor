@@ -28,7 +28,7 @@ def checkCryoMode(self, pumpSpeed):
                 doActivate = True
 
     # change the state of the alert based on cryoMode.
-    self.setActivated(doActivate)
+    self.setActivated(doActivate, genAllKeys=True)
     # regular check.
     return self.check(pumpSpeed)
 

@@ -74,8 +74,6 @@ class Key(object):
     TIMEOUT = 600
     STS_DATA_RATE = 300
 
-    alertOFF = alertsFactory.AlertOFF()
-
     def __init__(self, keyCB, keyId, keyName, stsType, stsId, stsHelp, **kwargs):
         self.keyCB = keyCB
         self.mhsKey = MhsKey(keyId, keyName)
@@ -85,8 +83,8 @@ class Key(object):
         # initialize empty datum.
         self.transitions = dict([(False, None), (True, None)])
         self.transmitted = None
-        # initialize alertLogic
-        self.alertLogic = self.alertOFF
+        # initialize alertLogic, eg simple monitoring.
+        self.alertLogic = alertsFactory.Monitoring(self.keyCB.actorRules)
 
     @property
     def actorKeyId(self):
@@ -95,7 +93,7 @@ class Key(object):
 
     @property
     def active(self):
-        return self.alertLogic != self.alertOFF
+        return self.alertLogic.activated
 
     @property
     def triggered(self):
@@ -148,6 +146,11 @@ class Key(object):
         if now - timestamp > Key.TIMEOUT:
             stsText = genTimeoutText(timestamp)
             timestamp = now
+
+        # overriding by OK if alert is deactivated no matter what.
+        if not self.active:
+            stsText = 'OK'
+
         # convert to STS world.
         return self.stsKey.build(timestamp, stsValue, stsText)
 
@@ -201,9 +204,12 @@ class Key(object):
         self.alertLogic = alertLogic
         self.genAlertLogic()
 
-    def resetAlertLogic(self):
+    def resetAlertLogic(self, doActivate=True):
         """Declaring no alertLogic for that key."""
-        self.alertLogic = self.alertOFF
+        # just monitoring by default.
+        self.alertLogic = alertsFactory.Monitoring(self.keyCB.actorRules)
+        # alertLogic should always be activated by default, unless if force not to.
+        self.alertLogic.setActivated(doActivate)
         self.genAlertLogic()
 
     def genAlertLogic(self, cmd=None):

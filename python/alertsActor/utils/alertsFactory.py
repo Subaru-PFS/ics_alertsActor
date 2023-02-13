@@ -3,14 +3,6 @@ import re
 from functools import partial
 
 
-class AlertOFF(object):
-    def __str__(self):
-        return 'OFF'
-
-    def call(self, *args, **kwargs):
-        return 'OK'
-
-
 class Alert(object):
     def __init__(self, controller, call=True, alertFmt=None):
         self.controller = controller
@@ -41,9 +33,9 @@ class Alert(object):
 
         return self.checkAgainstLogic(value)
 
-    def setActivated(self, doActivate):
+    def setActivated(self, doActivate, genAllKeys=False):
         """deactivate|activate alert and generate keys if necessary."""
-        genKeys = doActivate != self.activated
+        genKeys = genAllKeys and doActivate != self.activated
         self.activated = doActivate
 
         if genKeys:
@@ -56,6 +48,13 @@ class Alert(object):
     def checkAgainstLogic(self, value):
         """Prototype"""
         return 'OK'
+
+
+class Monitoring(Alert):
+    """Just checking for NaNs or timeout."""
+
+    def describe(self):
+        return 'MONITORING'
 
 
 class LimitsAlert(Alert):
