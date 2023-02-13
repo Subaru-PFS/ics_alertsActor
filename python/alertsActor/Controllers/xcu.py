@@ -39,7 +39,8 @@ class xcu(actorRules.ActorRules):
         cryoMode = self.getCryoModeValue(keyVar)
         if cryoMode != self.cryoMode:
             cmd.inform(f'text="new cryoMode:{cryoMode} reloading alerts for {self.name}"')
-            self.setAlertsLogic(cmd)
+            # force deactivated if mode==offline.
+            self.setAlertsLogic(cmd, doActivate=cryoMode != 'offline')
             self.cryoMode = cryoMode
 
     def loadAlertsCfg(self, cmd):

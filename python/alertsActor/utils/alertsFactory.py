@@ -3,36 +3,58 @@ import re
 from functools import partial
 
 
-class AlertOFF(object):
-    def __str__(self):
-        return 'OFF'
-
-    def call(self, *args, **kwargs):
-        return 'OK'
-
-
 class Alert(object):
     def __init__(self, controller, call=True, alertFmt=None):
         self.controller = controller
         self.alertFmt = alertFmt
 
+        self.activated = True
+
         # just call regular check
         if isinstance(call, bool):
-            self.logicStr = 'EmptyLogic'
             self.call = self.check
         # dynamically load python routine from module.
         else:
-            self.logicStr = f'Callback({call})'
             modname, funcname = call.split('.')
             module = importlib.import_module(f'alertsActor.Controllers.{modname}')
             self.call = partial(getattr(module, funcname), self)
 
+    def __str__(self):
+        """Overriden by OFF if deactivated"""
+        if not self.activated:
+            return 'OFF'
+
+        return self.describe()
+
     def check(self, value):
-        """ empty logic."""
+        """Overriden by OK if deactivated."""
+        if not self.activated:
+            return 'OK'
+
+        return self.checkAgainstLogic(value)
+
+    def setActivated(self, doActivate, genAllKeys=False):
+        """deactivate|activate alert and generate keys if necessary."""
+        genKeys = genAllKeys and doActivate != self.activated
+        self.activated = doActivate
+
+        if genKeys:
+            self.controller.genAlertLogicKeys()
+
+    def describe(self):
+        """Prototype"""
+        return 'EmptyLogic'
+
+    def checkAgainstLogic(self, value):
+        """Prototype"""
         return 'OK'
 
-    def __str__(self):
-        return self.logicStr
+
+class Monitoring(Alert):
+    """Just checking for NaNs or timeout."""
+
+    def describe(self):
+        return 'MONITORING'
 
 
 class LimitsAlert(Alert):
@@ -58,7 +80,7 @@ class LimitsAlert(Alert):
         self.lowerBoundInclusive = lowerBoundInclusive
         self.upperBoundInclusive = upperBoundInclusive
 
-    def __str__(self):
+    def describe(self):
         logic1 = '<=' if self.lowerBoundInclusive else '<'
         logic2 = '<=' if self.upperBoundInclusive else '<'
 
@@ -72,7 +94,7 @@ class LimitsAlert(Alert):
 
         return f'Limits({alertStr})'
 
-    def check(self, value):
+    def checkAgainstLogic(self, value):
         """Check value against limits."""
         alertState = 'OK'
 
@@ -94,11 +116,11 @@ class RegexpAlert(Alert):
         self.pattern = pattern
         self.invert = invert
 
-    def __str__(self):
+    def describe(self):
         log = 'not value match' if self.invert else 'value match'
         return f'Regexp({log} {self.pattern})'
 
-    def check(self, value):
+    def checkAgainstLogic(self, value):
         """Check value against pattern."""
         alertState = 'OK'
         # alert is triggered is pattern is not matched.
@@ -119,10 +141,10 @@ class BoolAlert(Alert):
         Alert.__init__(self, *args, **kwargs)
         self.nominalValue = nominalValue
 
-    def __str__(self):
+    def describe(self):
         return f'Bool(value == {self.nominalValue})'
 
-    def check(self, value):
+    def checkAgainstLogic(self, value):
         """Check value against nominal value."""
         alertState = 'OK'
 
