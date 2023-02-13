@@ -31,6 +31,9 @@ class ActorRules(QThread):
         """ return actorModel"""
         return [cb for keyVarName, cb in self.cbs.items()]
 
+    def allKeys(self):
+        return sum([keyCB.identify(identifier=None) for keyCB in self.keyCallbacks], [])
+
     def start(self, cmd):
         """ call by controller.start()"""
         # make sure actorName is in the models.
@@ -142,9 +145,14 @@ class ActorRules(QThread):
         """Remove current alert logic from the existing callbacks."""
         cmd.inform(f'text="unsetting all alerts logic for {self.name}"')
 
-        for keyCB in self.keyCallbacks:
-            for key in keyCB.identify(identifier=None):
-                key.resetAlertLogic()
+        for key in self.allKeys():
+            key.resetAlertLogic()
+
+    def genAlertLogicKeys(self):
+        """Generate alertLogic keyword for all keys."""
+
+        for key in self.allKeys():
+            key.genAlertLogic()
 
     def handleTimeout(self, cmd=None):
         if self.exitASAP:

@@ -8,10 +8,12 @@ reload(actorRules)
 def checkCryoMode(self, pumpSpeed):
     """if any cryostat(s) wired to this roughing pump is in roughing|pumping|bakeout mode and pump speed <=0
     then trigger an alert."""
-    alertMsg = 'OK'
-
+    # checking which spectrograph module is connected to this roughing pump.
     specNums = rough.wiredToSpecNum[self.controller.name]
     controllerNames = list(self.controller.actor.controllers.keys())
+
+    # not activate by default.
+    doActivate = False
 
     for specNum in specNums:
         for arm in 'brn':
@@ -22,10 +24,13 @@ def checkCryoMode(self, pumpSpeed):
 
             cryoMode = self.controller.actor.models[xcuActor].keyVarDict['cryoMode'].getValue(doRaise=False)
 
-            if cryoMode in ['roughing', 'pumpdown', 'bakeout'] and pumpSpeed <= 0:
-                alertMsg = self.alertFmt.format(value=pumpSpeed)
+            if cryoMode in ['roughing', 'pumpdown', 'bakeout']:
+                doActivate = True
 
-    return alertMsg
+    # change the state of the alert based on cryoMode.
+    self.setActivated(doActivate)
+    # regular check.
+    return self.check(pumpSpeed)
 
 
 class rough(actorRules.ActorRules):
