@@ -5,6 +5,23 @@ import alertsActor.Controllers.actorRules as actorRules
 reload(actorRules)
 
 
+def check24VAUX(cls, value):
+    """check 24V-AUX value against turbo speed."""
+    turboSpeed = cls.controller.model['turboSpeed'].getValue()
+
+    turboDroppingVolt = 0 < turboSpeed < 90000
+    lowerLimit = 23.0 if turboDroppingVolt else 24.0
+    # only update logic if lower limit has changed
+    doUpdate = cls.lowerLimit != lowerLimit
+
+    if doUpdate:
+        cls.lowerLimit = lowerLimit
+        [key] = cls.controller.cbs['pcmPower2'].identify('volts')
+        key.genAlertLogic()
+
+    return cls.check(value)
+
+
 class xcu(actorRules.ActorRules):
     """ basic rules, just add handler from cryoMode"""
 
