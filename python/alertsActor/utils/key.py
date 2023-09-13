@@ -71,10 +71,9 @@ class Key(object):
 
     INVALID_VALUE = dict([('FLOAT+TEXT', np.nan), ('INTEGER+TEXT', 9998)])
     INVALID_TEXT = 'invalid value !'
-    TIMEOUT = 600
-    STS_DATA_RATE = 300
 
-    def __init__(self, keyCB, keyId, keyName, stsType, stsId, stsHelp, **kwargs):
+    def __init__(self, keyCB, keyId, keyName, stsType, stsId, stsHelp, STS_DATA_RATE=0, **kwargs):
+        self.STS_DATA_RATE = keyCB.actorRules.actor.actorConfig['STS_DATA_RATE'] if not STS_DATA_RATE else STS_DATA_RATE
         self.keyCB = keyCB
         self.mhsKey = MhsKey(keyId, keyName)
         self.stsKey = StsKey(stsType, stsId, stsHelp, **kwargs)
@@ -108,6 +107,10 @@ class Key(object):
     @property
     def allowInvalid(self):
         return self.keyCB.actorRules.actor.actorConfig['allowInvalid']
+
+    @property
+    def TIMEOUT(self):
+        return self.keyCB.actorRules.actor.actorConfig['TIMEOUT']
 
     def getCmd(self, cmd=None):
         """Return cmd object in anycase."""
@@ -143,7 +146,7 @@ class Key(object):
         # check value.
         stsValue, stsText = checkValue(value)
         # override stsText if timedOut.
-        if now - timestamp > Key.TIMEOUT:
+        if now - timestamp > self.TIMEOUT:
             stsText = genTimeoutText(timestamp)
             timestamp = now
 
@@ -159,7 +162,7 @@ class Key(object):
 
         def doUpdateSTS(timestamp):
             """Check if STS value is now obsolete and needs update."""
-            return timestamp - self.transmitted.timestamp > Key.STS_DATA_RATE
+            return timestamp - self.transmitted.timestamp >= self.STS_DATA_RATE
 
         def alertStatus(alertState):
             """Get alert status from alert state, distinguish between OK, NO DATA and ALERT."""
