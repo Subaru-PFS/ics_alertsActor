@@ -34,4 +34,4 @@ def checkCryoMode(self, pumpSpeed):
 
 
 class rough(actorRules.ActorRules):
-    wiredToSpecNum = dict(rough1=(1, 2), rough2=(3, 4))
+    wiredToSpecNum = dict(rough1=(1, 4), rough2=(2, 3))
