@@ -1,8 +1,8 @@
 import STSpy.STSpy.datum as stsDatum
 import alertsActor.utils.alertsFactory as alertsFactory
 import ics.utils.time as pfsTime
-import numpy as np
 import opscore.protocols.types as types
+from ics.utils.fits import mhs as fitsMhs
 
 
 class MhsKey(object):
@@ -69,7 +69,8 @@ class Key(object):
     """Instanciated per keyword and field.
     Encapsulate all the logic to convert mhs value to sts, and check value against alert configuration."""
 
-    INVALID_VALUE = dict([('FLOAT+TEXT', np.nan), ('INTEGER+TEXT', 9998)])
+    INVALID_VALUE = dict([('FLOAT+TEXT', float(fitsMhs.INVALID)), ('INTEGER+TEXT', int(fitsMhs.INVALID))])
+    EXPIRED_VALUE = dict([('FLOAT+TEXT', float(fitsMhs.EXPIRED)), ('INTEGER+TEXT', int(fitsMhs.EXPIRED))])
     INVALID_TEXT = 'invalid value !'
 
     def __init__(self, keyCB, keyId, keyName, stsType, stsId, stsHelp, STS_DATA_RATE=0, **kwargs):
@@ -120,10 +121,10 @@ class Key(object):
     def toStsDatum(self, timestamp, value, newValue=True):
         """Convert timestamp and value to a valid alert-compliant STS datum."""
 
-        def genTimeoutText(timestamp):
+        def genTimeoutValueAndText(timestamp):
             # timestamp==0 if keyword never actually been updated.
             datestr = pfsTime.Time.fromtimestamp(timestamp).isoformat(microsecond=False) if timestamp else "TRON START"
-            return f'NO DATA SINCE {datestr}'
+            return Key.EXPIRED_VALUE[self.stsKey.stsType], f'NO DATA SINCE {datestr}'
 
         def checkValue(rawValue):
             """ """
@@ -147,7 +148,7 @@ class Key(object):
         stsValue, stsText = checkValue(value)
         # override stsText if timedOut.
         if now - timestamp > self.TIMEOUT:
-            stsText = genTimeoutText(timestamp)
+            stsValue, stsText = genTimeoutValueAndText(timestamp)
             timestamp = now
 
         # overriding by OK if alert is deactivated no matter what.
