@@ -43,7 +43,6 @@ class xcu(actorRules.ActorRules):
     def start(self, cmd):
         """called by controller.start() ."""
         actorRules.ActorRules.start(self, cmd)
-        self.cryoMode = self.getCryoModeValue()
 
         # reload alerts logic on cryoMode
         self.logger.warning(f'wiring in {self.name}.cryoMode to xcu.reloadAlerts()')
