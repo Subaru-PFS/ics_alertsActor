@@ -24,7 +24,7 @@ The `alertsActor` operates on a push-based mechanism using MHS (Messaging Hub Sy
     * If the value has changed significantly or if a transmit rate limit is reached, it prepares the data for
       transmission.
 4. **Transmission**:
-    * Data is forwarded to the Subaru Telemetry System (STS) via the `STSpy` library.
+    * Data is forwarded to the Subaru Telemetry System (STS) via the `subaru-telemetry-client` library.
     * If an alert is triggered or cleared, the actor updates its internal state and generates an `alertStatus` keyword.
 5. **Monitoring**: The actor also performs periodic checks for "stale" data (timeouts), ensuring that if an actor stops
    reporting, an alert is still generated.

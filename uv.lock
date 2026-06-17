@@ -365,6 +365,7 @@ dependencies = [
     { name = "pfs-instdata" },
     { name = "pfs-tron-actorcore" },
     { name = "pfs-utils" },
+    { name = "subaru-telemetry-client" },
 ]
 
 [package.dev-dependencies]
@@ -380,6 +381,7 @@ requires-dist = [
     { name = "pfs-instdata", git = "https://github.com/Subaru-PFS/pfs_instdata.git" },
     { name = "pfs-tron-actorcore", git = "https://github.com/Subaru-PFS/tron_actorcore.git" },
     { name = "pfs-utils", git = "https://github.com/Subaru-PFS/pfs_utils.git" },
+    { name = "subaru-telemetry-client", git = "https://github.com/Subaru-InstDiv/subaru-telemetry-client.git" },
 ]
 
 [package.metadata.requires-dev]
@@ -1237,6 +1239,11 @@ sdist = { url = "https://files.pythonhosted.org/packages/5e/89/b4a0bcfdf4f71a3de
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a9/18/489c97b834dfff9cf2fc2507cede4bcd4b11e67f84bc462acd1992496f86/structlog-26.1.0-py3-none-any.whl", hash = "sha256:e081a26d6c373e6d201eca24eede26d8ffab07f88f477822e679183428d3d91e", size = 73764 },
 ]
+
+[[package]]
+name = "subaru-telemetry-client"
+version = "2.0.1.dev41+g931ffd73d"
+source = { git = "https://github.com/Subaru-InstDiv/subaru-telemetry-client.git#931ffd73d8413219cdd534aefccb2118e2e51ec4" }
 
 [[package]]
 name = "threadpoolctl"

@@ -3,8 +3,8 @@ from logging import Logger
 
 import alertsActor.utils.key as keyUtils
 import ics.utils.time as pfsTime
-import STSpy.STSpy.radio as stsRadio
 from opscore.actor.keyvar import KeyVar
+from subaru.sts.client.radio import Radio
 
 reload(keyUtils)
 
@@ -18,7 +18,7 @@ class KeyCallback:
         self.keys = dict([(stsMap["keyId"], keyUtils.Key(self, **stsMap)) for stsMap in stsMaps])
 
     @property
-    def logger(self) -> "Logger":
+    def logger(self) -> Logger:
         """Return the logger from actorRules."""
         return self.actorRules.logger
 
@@ -85,7 +85,7 @@ class KeyCallback:
             return
 
         self.logger.debug(f"flushing STS (host={stsHost}), with: {buffer}")
-        stsServer = stsRadio.Radio(host=stsHost)
+        stsServer = Radio(host=stsHost)
         stsServer.transmit(buffer)
 
         # record transmitted datums.

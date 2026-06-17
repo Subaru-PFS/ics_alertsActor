@@ -7,6 +7,7 @@ from ics.utils.fits import mhs as fitsMhs
 from ics.utils.time import Time
 from opscore.protocols.types import Enum, Invalid, String
 from subaru.sts.client.datum import Datum
+from subaru.sts.client.datum import Datum
 
 
 class MhsKey:
@@ -84,7 +85,7 @@ class StsKey:
         self.stsHelp = stsHelp
 
     @staticmethod
-    def getText(datum: "stsDatum.Datum") -> str:
+    def getText(datum: Datum) -> str:
         """Return stsText from datum.
 
         Parameters
@@ -101,7 +102,7 @@ class StsKey:
         return stsText
 
     @staticmethod
-    def repr(datum: "stsDatum.Datum | None") -> "tuple":
+    def repr(datum: Datum | None) -> tuple:
         """Return a representation of the datum for MHS keywords.
 
         Parameters
@@ -125,7 +126,7 @@ class StsKey:
         stsValue, stsText = datum.value
         return Time.fromtimestamp(datum.timestamp).isoformat(microsecond=False), stsValue, f'"{stsText}"'
 
-    def build(self, timestamp: float, stsValue: float | int, stsText: str) -> "stsDatum.Datum":
+    def build(self, timestamp: float, stsValue: float | int, stsText: str) -> Datum:
         """Build an STS datum.
 
         Parameters
@@ -145,14 +146,14 @@ class StsKey:
 
         def convert(stsType, stsValue):
             if stsType == "FLOAT+TEXT":
-                return stsDatum.Datum.FloatWithText, float(stsValue)
+                return Datum.FloatWithText, float(stsValue)
             elif stsType == "INTEGER+TEXT":
-                return stsDatum.Datum.IntegerWithText, int(stsValue)
+                return Datum.IntegerWithText, int(stsValue)
             else:
                 raise TypeError(f"do not know how to convert a {stsType}")
 
-        stsType, stsValue = convert(self.stsType, stsValue)
-        return stsType(self.stsId, timestamp=int(timestamp), value=(stsValue, stsText))
+        datumClass, stsValue = convert(self.stsType, stsValue)
+        return datumClass(self.stsId, timestamp=int(timestamp), value=(stsValue, stsText))
 
 
 class Key:
@@ -224,7 +225,7 @@ class Key:
         cmd = self.keyCB.actorRules.actor.bcast if cmd is None else cmd
         return cmd
 
-    def toStsDatum(self, timestamp: float, value: any, newValue: bool = True) -> "stsDatum.Datum":
+    def toStsDatum(self, timestamp: float, value: any, newValue: bool = True) -> Datum:
         """Convert timestamp and value to a valid alert-compliant STS datum.
 
         Parameters
@@ -279,7 +280,7 @@ class Key:
         # convert to STS world.
         return self.stsKey.build(timestamp, stsValue, stsText)
 
-    def doTransmit(self, datum: "stsDatum.Datum") -> bool:
+    def doTransmit(self, datum: Datum) -> bool:
         """Check if given datum needs to be transmitted to STS right away.
 
         Parameters
@@ -370,7 +371,7 @@ class Key:
         """
         self.getCmd(cmd).inform(f'{self.actorKeyId}_logic="{str(self.alertLogic)}"')
 
-    def genKey(self, datum: "stsDatum.Datum", suffix: str = "", cmd: "Command | None" = None) -> None:
+    def genKey(self, datum: Datum, suffix: str = "", cmd: "Command | None" = None) -> None:
         """Generate alert keyword.
 
         Parameters
