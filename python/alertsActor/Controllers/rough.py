@@ -5,9 +5,24 @@ import alertsActor.Controllers.actorRules as actorRules
 reload(actorRules)
 
 
-def checkCryoMode(self, pumpSpeed):
-    """if any cryostat(s) wired to this roughing pump is in roughing|pumping|bakeout mode and pump speed <=0
-    then trigger an alert."""
+def checkCryoMode(self: "alertsFactory.Alert", pumpSpeed: float | int) -> str:
+    """Check cryo mode of connected spectrographs.
+
+    If any cryostat(s) wired to this roughing pump is in roughing|pumping|bakeout mode and pump speed <=0
+    then trigger an alert.
+
+    Parameters
+    ----------
+    self : `alertsFactory.Alert`
+        The alert object.
+    pumpSpeed : `float` | `int`
+        The current pump speed.
+
+    Returns
+    -------
+    alert_state : `str`
+        'OK' or an alert message.
+    """
     # checking which spectrograph module is connected to this roughing pump.
     specNums = rough.wiredToSpecNum[self.controller.name]
     controllerNames = list(self.controller.actor.controllers.keys())
@@ -16,15 +31,15 @@ def checkCryoMode(self, pumpSpeed):
     doActivate = False
 
     for specNum in specNums:
-        for arm in 'brn':
-            xcuActor = f'xcu_{arm}{specNum}'
+        for arm in "brn":
+            xcuActor = f"xcu_{arm}{specNum}"
             # I consider that this cryostat is not relevant is that case.
             if xcuActor not in controllerNames:
                 continue
 
-            cryoMode = self.controller.actor.models[xcuActor].keyVarDict['cryoMode'].getValue(doRaise=False)
+            cryoMode = self.controller.actor.models[xcuActor].keyVarDict["cryoMode"].getValue(doRaise=False)
 
-            if cryoMode in ['roughing', 'pumpdown', 'bakeout']:
+            if cryoMode in ["roughing", "pumpdown", "bakeout"]:
                 doActivate = True
 
     # change the state of the alert based on cryoMode.

@@ -30,18 +30,34 @@
 
 from argparse import ArgumentParser
 from datetime import datetime
-from logging import basicConfig, getLogger, INFO
+from logging import INFO, basicConfig, getLogger
 from socket import MSG_PEEK
-from socketserver import TCPServer, BaseRequestHandler
+from socketserver import BaseRequestHandler, TCPServer
+
 from STSpy import Radio
 
-class RequestHandler(BaseRequestHandler):
 
-    def handle(self):
+class RequestHandler(BaseRequestHandler):
+    """Handle incoming STS write requests."""
+
+    def handle(self) -> None:
+        """Handle a single request."""
 
         logger = getLogger()
 
-        def _recv_packet(sock):
+        def _recv_packet(sock) -> "bytes | None":
+            """Receive a single packet from the socket.
+
+            Parameters
+            ----------
+            sock : `socket.socket`
+                The socket to receive from.
+
+            Returns
+            -------
+            packet : `bytes` | `None`
+                The received packet or None if no more data.
+            """
 
             # 0x80 | len(packet) : binary data packet
             # MSB == 0           : no more data packet
@@ -53,9 +69,9 @@ class RequestHandler(BaseRequestHandler):
 
         try:
             command = self.request.makefile().readline().strip()
-            if command[0] in 'Ww':
+            if command[0] in "Ww":
                 # write command
-                self.request.sendall(b'OK: Write On\n')
+                self.request.sendall(b"OK: Write On\n")
                 while True:
                     packet = _recv_packet(self.request)
                     if not packet:
@@ -63,27 +79,28 @@ class RequestHandler(BaseRequestHandler):
                     datum = Radio.unpack(packet)
                     logger.info(datum)
             else:
-                logger.warning('Command {} not supported'.format(command))
+                logger.warning(f"Command {command} not supported")
         except Exception as e:
             logger.error(e)
             raise
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument('--address', default='0.0.0.0')
-    parser.add_argument('--port', default=Radio.PORT)
-    parser.add_argument('--log-file', default=datetime.now().strftime('%Y%m%d%H%M%S.log'))
-    parser.add_argument('--log-level', default=INFO)
+    parser.add_argument("--address", default="0.0.0.0")
+    parser.add_argument("--port", default=Radio.PORT)
+    parser.add_argument("--log-file", default=datetime.now().strftime("%Y%m%d%H%M%S.log"))
+    parser.add_argument("--log-level", default=INFO)
     args, _ = parser.parse_known_args()
 
-    basicConfig(filename=args.log_file, level=args.log_level, format='{asctime:s} [{levelname:s}] {message:s}', style='{')
+    basicConfig(
+        filename=args.log_file, level=args.log_level, format="{asctime:s} [{levelname:s}] {message:s}", style="{"
+    )
     logger = getLogger()
 
     with TCPServer((args.address, args.port), RequestHandler) as server:
         server.allow_reuse_address = True
-        logger.info('Serving on {}'.format(server.server_address))
+        logger.info(f"Serving on {server.server_address}")
         try:
             server.serve_forever()
         except KeyboardInterrupt:

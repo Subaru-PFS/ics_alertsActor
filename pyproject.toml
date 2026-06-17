@@ -16,7 +16,8 @@ dependencies = [
     "pfs-utils @ git+https://github.com/Subaru-PFS/pfs_utils.git",
     "pfs-instdata @ git+https://github.com/Subaru-PFS/pfs_instdata.git",
     "ics-utils @ git+https://github.com/Subaru-PFS/ics_utils.git",
-#    "ics-actorkeys @ git+https://github.com/Subaru-PFS/ics_actorkeys.git",
+
+    #    "ics-actorkeys @ git+https://github.com/Subaru-PFS/ics_actorkeys.git",
     "dnspython"  # Actually should come from ics-utils
 ]
 dynamic = ["version"]
@@ -72,4 +73,13 @@ ignore = [
     "N816", # MixedCase variable in global scope
     "EM101", # Exception must not use a string literal, assign to variable first
     "TRY003", # Avoid specifying long messages outside the exception class
+]
+[tool.ruff.lint.isort]
+known-first-party = [
+    "actorcore",
+    "alertsActor",
+    "ics",
+    "opscore",
+    "pfs",
+    "subaru",
 ]

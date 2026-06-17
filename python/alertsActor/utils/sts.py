@@ -1,7 +1,8 @@
 import re
 from importlib import reload
 
-import opscore.protocols.types as types
+import alertsActor.utils.stsOverrides as stsOverrides
+from opscore.protocols.types import Bool, Enum
 
 stsSpsBase = 1140  # the start of the STS radio ID range
 stsModuleCount = 200  # the number of IDs per SM
@@ -11,7 +12,7 @@ stsCamIds = dict(r=0, b=1, n=2)  # the order of the cameras in per-module STS id
 actorBase = dict(meb=1096, agcc=2300, peb=2340, pfilamps=2380, fps=2400, aitroom=2500)
 
 
-def camBase(smNum, arm):
+def camBase(smNum: int, arm: str) -> int:
     """Return the STS base radio ID for a given camera
 
     Parameters
@@ -27,12 +28,10 @@ def camBase(smNum, arm):
         The start of the STS radio id range for this camera.
     """
     smNum = int(smNum)
-    return (stsSpsBase
-            + (smNum - 1) * stsModuleCount
-            + stsCamIds[arm] * stsCamCount)
+    return stsSpsBase + (smNum - 1) * stsModuleCount + stsCamIds[arm] * stsCamCount
 
 
-def enuBase(smNum):
+def enuBase(smNum: int) -> int:
     """Return the STS base radio ID for a given ENU actor.
 
     Parameters
@@ -46,20 +45,35 @@ def enuBase(smNum):
         The start of the STS radio id range for this ENU
     """
     smNum = int(smNum)
-    return (stsSpsBase
-            + (smNum - 1) * stsModuleCount
-            + 3 * stsCamCount)
+    return stsSpsBase + (smNum - 1) * stsModuleCount + 3 * stsCamCount
 
 
-def roughBase(roughNum):
+def roughBase(roughNum: int) -> int:
+    """Return the STS base radio ID for a given roughing actor.
+
+    Parameters
+    ----------
+    roughNum : `int`
+        The 1..2 roughing actor number.
+
+    Returns
+    -------
+    `int`
+        The start of the STS radio id range for this roughing actor.
+
+    Raises
+    ------
+    ValueError
+        Invalid roughing actor number.
+    """
     roughNum = int(roughNum)
     if roughNum not in {1, 2}:
-        raise ValueError('invalid roughing actor number')
+        raise ValueError("invalid roughing actor number")
 
     return stsSpsBase + 4 * stsModuleCount + (roughNum - 1) * stsRoughCount
 
 
-def parseAlertsModels(parts, cmd=None):
+def parseAlertsModels(parts: list[str], cmd=None) -> dict[str, int]:
     """Generate a list of models from the list of parts, and their STS radio ID bases
 
     Parameters
@@ -73,7 +87,7 @@ def parseAlertsModels(parts, cmd=None):
 
     Returns
     -------
-    stsModels
+    stsModels : `dict` [ `str`, `int` ]
         Dictionary of modelName: stsBaseId
 
     Raises
@@ -87,30 +101,30 @@ def parseAlertsModels(parts, cmd=None):
         cmd.inform(f'text="evaluating models for parts: {parts}"')
     stsModels = dict()
     for p in parts:
-        if re.search('^rough[12]$', p) is not None:
+        if re.search("^rough[12]$", p) is not None:
             stsModels[p] = roughBase(int(p[-1]))
-        elif re.search('^enu_sm[1-9]$', p) is not None:
+        elif re.search("^enu_sm[1-9]$", p) is not None:
             sm = int(p[-1])
             modelName = p
             stsModels[modelName] = enuBase(sm)
-        elif re.search('^[brn][1-9]$', p) is not None:
+        elif re.search("^[brn][1-9]$", p) is not None:
             sm = int(p[-1])
             arm = p[-2]
-            modelName = f'xcu_{arm}{sm}'
+            modelName = f"xcu_{arm}{sm}"
             stsModels[modelName] = camBase(smNum=sm, arm=arm)
-        elif re.search('^sm[1-9]$', p) is not None:
+        elif re.search("^sm[1-9]$", p) is not None:
             sm = int(p[-1])
-            modelName = f'enu_{p}'
+            modelName = f"enu_{p}"
             stsModels[modelName] = enuBase(sm)
-            for arm in {'b', 'r', 'n'}:
-                modelName = f'xcu_{arm}{sm}'
+            for arm in {"b", "r", "n"}:
+                modelName = f"xcu_{arm}{sm}"
                 stsModels[modelName] = camBase(smNum=sm, arm=arm)
         else:
             modelName = p
             try:
                 idBase = actorBase[modelName]
-            except KeyError:
-                raise ValueError(f"invalid alerts part: {p}")
+            except KeyError as e:
+                raise ValueError(f"invalid alerts part: {p}") from e
 
             stsModels[modelName] = idBase
 
@@ -119,26 +133,29 @@ def parseAlertsModels(parts, cmd=None):
     return stsModels
 
 
-def stsIdFromModel(cmd, model, stsPrimaryId):
-    """
-    For a given actorkeys model, return a list of all the STS ids listed therein.
+def stsIdFromModel(cmd, model, stsPrimaryId: int) -> dict[str, list[dict]]:
+    """For a given actorkeys model, return a list of all the STS ids listed therein.
 
-    Args
-    ----
-    model : opscore.actor.Model
-      Usually from self.actor.models[modelName]
+    Parameters
+    ----------
+    cmd : `actorcore.Command`
+        A Command we can send output to.
+    model : `opscore.actor.Model`
+        Usually from self.actor.models[modelName]
+    stsPrimaryId : `int`
+        The primary STS radio ID for this model.
 
     Returns
     -------
+    keysIds : `dict` [ `str`, `list` [ `dict` ] ]
+        Dictionary of keywordName: list of STS configurations.
     """
 
-    from . import stsOverrides
     reload(stsOverrides)
 
     keysIds = dict()
     modelName = model.actor
-    override = stsOverrides.override
-    overrideKeys = override[modelName] if modelName in override.keys() else dict()
+    overrideKeys = stsOverrides.override.get(modelName, {})
 
     for mk, mv in model.keyVarDict.items():
         try:
@@ -147,7 +164,7 @@ def stsIdFromModel(cmd, model, stsPrimaryId):
             stsIds = []
             for kv_i, kvt in enumerate(mv._typedValues.vtypes):
                 try:
-                    if not hasattr(kvt, 'STS') or kvt.STS is None:
+                    if not hasattr(kvt, "STS") or kvt.STS is None:
                         continue
                     try:
                         overrideLabel = overrideKeys[mk][kv_i]
@@ -159,30 +176,38 @@ def stsIdFromModel(cmd, model, stsPrimaryId):
                         continue
 
                     stsLabel = kvt.help if overrideLabel is None else overrideLabel
-                    fullLabel = f'PFS: {modelName.upper()} {stsLabel}'
+                    fullLabel = f"PFS: {modelName.upper()} {stsLabel}"
                     offset = kvt.STS
 
                     # Hackery: bool cannot be subclassed, so we need to check the keyword class
-                    if issubclass(kvt.__class__, types.Bool):
+                    if issubclass(kvt.__class__, Bool):
                         baseType = bool
                     else:
                         baseType = kvt.__class__.baseType
 
-                    if issubclass(baseType, types.Enum):
-                        stsType = 'INTEGER+TEXT'
+                    if issubclass(baseType, Enum):
+                        stsType = "INTEGER+TEXT"
                     elif issubclass(baseType, float):
-                        stsType = 'FLOAT+TEXT'
+                        stsType = "FLOAT+TEXT"
                     elif issubclass(baseType, int):
-                        stsType = 'INTEGER+TEXT'
+                        stsType = "INTEGER+TEXT"
                     elif issubclass(baseType, str):
-                        stsType = 'INTEGER+TEXT'
+                        stsType = "INTEGER+TEXT"
                     elif issubclass(baseType, bool):
-                        stsType = 'INTEGER+TEXT'
+                        stsType = "INTEGER+TEXT"
                     else:
-                        raise TypeError('unknown type')
+                        raise TypeError("unknown type")
 
-                    stsIds.append(dict(keyId=kv_i, keyName=kvt.name, stsId=stsPrimaryId + offset,
-                                       stsType=stsType, stsHelp=fullLabel, units=kvt.units))
+                    stsIds.append(
+                        dict(
+                            keyId=kv_i,
+                            keyName=kvt.name,
+                            stsId=stsPrimaryId + offset,
+                            stsType=stsType,
+                            stsHelp=fullLabel,
+                            units=kvt.units,
+                        )
+                    )
                 except Exception as e:
                     cmd.warn(f'text="FAILED to generate stsIDs for {modelName}.{mk}[{kv_i}], {kvt}: {e}"')
 
