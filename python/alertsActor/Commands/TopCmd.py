@@ -48,7 +48,7 @@ class TopCmd:
         """Report camera status and actor version."""
 
         self.actor.sendVersionKey(cmd)
-        cmd.inform(f'text="controllers: {self.actor.controllers}')
+        cmd.inform(f'text="controllers: {self.actor.controllers}"')
         cmd.inform(self.controllerKey())
         cmd.inform('text="Present!"')
 

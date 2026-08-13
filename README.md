@@ -5,7 +5,7 @@ the Subaru PFS project.
 
 ## Overview
 
-The `alertsActor` acts as a bridge between MHS (Messaging Hub System) keywords and the Subaru Telemetry System. it
+The `alertsActor` acts as a bridge between MHS (Messaging Hub System) keywords and the Subaru Telemetry System. It
 monitors keywords from various actors (e.g., `xcu`, `enu`, `rough`) and triggers alerts based on configurable logic.
 
 ## Architecture

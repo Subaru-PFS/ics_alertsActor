@@ -17,7 +17,7 @@ dependencies = [
     "pfs-instdata @ git+https://github.com/Subaru-PFS/pfs_instdata.git",
     "ics-utils @ git+https://github.com/Subaru-PFS/ics_utils.git",
     "subaru-telemetry-client @ git+https://github.com/Subaru-InstDiv/subaru-telemetry-client.git",
-#    "ics-actorkeys @ git+https://github.com/Subaru-PFS/ics_actorkeys.git",
+    #    "ics-actorkeys @ git+https://github.com/Subaru-PFS/ics_actorkeys.git",
     "dnspython"  # Actually should come from ics-utils
 ]
 dynamic = ["version"]

@@ -1,7 +1,9 @@
+import typing
+
+import ics.utils.time as pfsTime
 from actorcore.Command import Command
 from alertsActor.utils.alertsFactory import Alert, Monitoring
 from ics.utils.fits import mhs as fitsMhs
-from ics.utils.time import Time
 from opscore.protocols.types import Enum, Invalid, String
 from subaru.sts.client.datum import Datum
 
@@ -23,12 +25,12 @@ class MhsKey:
         self.keyName = keyName
 
     @staticmethod
-    def isInvalid(value: any) -> bool:
+    def isInvalid(value: typing.Any) -> bool:
         """Check if value is invalid.
 
         Parameters
         ----------
-        value : `any`
+        value : `typing.Any`
             The value to check.
 
         Returns
@@ -39,12 +41,12 @@ class MhsKey:
         return isinstance(value, Invalid) or value is None
 
     @staticmethod
-    def toStsValue(value: any) -> float | int:
+    def toStsValue(value: typing.Any) -> float | int:
         """Convert to a value that STS can understand (eg no String !).
 
         Parameters
         ----------
-        value : `any`
+        value : `typing.Any`
             The value to convert.
 
         Returns
@@ -120,7 +122,7 @@ class StsKey:
             return None, None, None
 
         stsValue, stsText = datum.value
-        return Time.fromtimestamp(datum.timestamp).isoformat(microsecond=False), stsValue, f'"{stsText}"'
+        return pfsTime.fromtimestamp(datum.timestamp).isoformat(microsecond=False), stsValue, f'"{stsText}"'
 
     def build(self, timestamp: float, stsValue: float | int, stsText: str) -> Datum:
         """Build an STS datum.
@@ -221,14 +223,14 @@ class Key:
         cmd = self.keyCB.actorRules.actor.bcast if cmd is None else cmd
         return cmd
 
-    def toStsDatum(self, timestamp: float, value: any, newValue: bool = True) -> Datum:
+    def toStsDatum(self, timestamp: float, value: typing.Any, newValue: bool = True) -> Datum:
         """Convert timestamp and value to a valid alert-compliant STS datum.
 
         Parameters
         ----------
         timestamp : `float`
             The timestamp of the value.
-        value : `any`
+        value : `typing.Any`
             The value to convert.
         newValue : `bool`
             Whether this is a new value.
@@ -241,7 +243,7 @@ class Key:
 
         def genTimeoutValueAndText(timestamp):
             # timestamp==0 if keyword never actually been updated.
-            datestr = Time.fromtimestamp(timestamp).isoformat(microsecond=False) if timestamp else "TRON START"
+            datestr = pfsTime.fromtimestamp(timestamp).isoformat(microsecond=False) if timestamp else "TRON START"
             return Key.EXPIRED_VALUE[self.stsKey.stsType], f"NO DATA SINCE {datestr}"
 
         def checkValue(rawValue):
@@ -261,7 +263,7 @@ class Key:
 
             return stsValue, stsText
 
-        now = timestamp()
+        now = pfsTime.timestamp()
         # check value.
         stsValue, stsText = checkValue(value)
         # override stsText if timedOut.

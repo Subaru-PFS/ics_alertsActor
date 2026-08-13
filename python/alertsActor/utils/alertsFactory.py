@@ -1,5 +1,6 @@
 import importlib
 import re
+import typing
 from functools import partial
 
 
@@ -26,12 +27,12 @@ class Alert:
 
         return self.describe()
 
-    def check(self, value: any) -> str:
+    def check(self, value: typing.Any) -> str:
         """Check if the value triggers an alert.
 
         Parameters
         ----------
-        value : `any`
+        value : `typing.Any`
             The value to check.
 
         Returns
@@ -64,12 +65,12 @@ class Alert:
         """Return a string description of the alert logic."""
         return "EmptyLogic"
 
-    def checkAgainstLogic(self, value: any) -> str:
+    def checkAgainstLogic(self, value: typing.Any) -> str:
         """Check the value against the specific logic.
 
         Parameters
         ----------
-        value : `any`
+        value : `typing.Any`
             The value to check.
 
         Returns
