@@ -1,0 +1,85 @@
+[build-system]
+requires = ["setuptools >= 77.0.3", "wheel", "lsst-versions"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ics-alerts-actor"
+description = "MHS Actor which forwards keywords to the Subaru Telemetry System (STS) and manages alerts."
+authors = [
+    { name = "Subaru PFS Team" },
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pfs-datamodel @ git+https://github.com/Subaru-PFS/datamodel.git",
+    "pfs-tron-actorcore @ git+https://github.com/Subaru-PFS/tron_actorcore.git",
+    "pfs-utils @ git+https://github.com/Subaru-PFS/pfs_utils.git",
+    "pfs-instdata @ git+https://github.com/Subaru-PFS/pfs_instdata.git",
+    "ics-utils @ git+https://github.com/Subaru-PFS/ics_utils.git",
+    "subaru-telemetry-client @ git+https://github.com/Subaru-InstDiv/subaru-telemetry-client.git",
+    #    "ics-actorkeys @ git+https://github.com/Subaru-PFS/ics_actorkeys.git",
+    "dnspython"  # Actually should come from ics-utils
+]
+dynamic = ["version"]
+
+[project.urls]
+"Homepage" = "https://github.com/Subaru-PFS/ics_alertsActor"
+"Bug Tracker" = "https://github.com/Subaru-PFS/ics_alertsActor/issues"
+"Changelog" = "https://github.com/Subaru-PFS/ics_alertsActor/blob/main/CHANGELOG.md"
+
+[tool.setuptools.packages.find]
+where = ["python/"]
+include = ["alertsActor", "alertsActor.*"]
+
+[tool.lsst_versions]
+write_to = "python/alertsActor/version.py"
+
+[tool.pydocstyle]
+convention = "numpy"
+
+[tool.uv]
+managed = true
+dev-dependencies = [
+    "ruff",
+]
+
+[project.scripts]
+alertsActor = "alertsActor.main:main"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E", # pycodestyle errors
+    "W", # pycodestyle warnings
+    "F", # pyflakes
+    "I", # isort
+    "B", # flake8-bugbear
+    "UP", # pyupgrade
+    "N", # pep8-naming
+    "ANN", # flake8-annotations
+]
+ignore = [
+    "ANN101", # Missing type annotation for self in method
+    "ANN102", # Missing type annotation for cls in classmethod
+    "ANN401", # Dynamically typed expressions (Any) are disallowed
+    "N802", # Function name should be lowercase
+    "N803", # Argument name should be lowercase
+    "N806", # Variable in function should be lowercase
+    "N812", # LowerCase imported as non
+    "N815", # MixedCase variable in class scope
+    "N816", # MixedCase variable in global scope
+    "EM101", # Exception must not use a string literal, assign to variable first
+    "TRY003", # Avoid specifying long messages outside the exception class
+]
+[tool.ruff.lint.isort]
+known-first-party = [
+    "actorcore",
+    "alertsActor",
+    "ics",
+    "opscore",
+    "pfs",
+    "subaru",
+]
